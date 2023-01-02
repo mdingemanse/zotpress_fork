@@ -16,7 +16,7 @@ if ( ! class_exists('ZotpressRequest') )
 {
     class ZotpressRequest
     {
-        var $update = false,
+        public $update = false,
             $request_error = false,
             $checkEveryMin = 10, // minutes
             $api_user_id,
@@ -215,7 +215,7 @@ if ( ! class_exists('ZotpressRequest') )
             // Or, if cached version exists, check to see if it's out of date,
             // and return whichever is newer (and cache the newest).
             if ( count($zp_results) == 0
-                    || ( isset($zp_results[0]->retrieved)
+                    || ( property_exists($zp_results[0], 'retrieved') && $zp_results[0]->retrieved !== null
                             && $this->checkTime($zp_results[0]->retrieved) ) )
             {
                 $headers_arr = array ( "Zotero-API-Version" => "3" );
@@ -239,33 +239,25 @@ if ( ! class_exists('ZotpressRequest') )
                                 && $response["response"]["code"] != "304" ) )
                 {
                     // Deal with errors
-                    if ( is_wp_error($response)
-                            || ! isset($response['body']) )
-                    {
+                    if (is_wp_error($response)
+                            || ! isset($response['body'])) {
                         $this->request_error = $response->get_error_message();
-
                         if ( $response->get_error_code() == "http_request_failed" )
                         {
                             // Try again with less restrictions
                             add_filter('https_ssl_verify', '__return_false');
                             $response = wp_remote_get( $url, array( 'headers' => array("Zotero-API-Version" => "2") ) );
 
-                            if ( is_wp_error($response) || ! isset($response['body']) )
-                            {
+                            if (is_wp_error($response) || ! isset($response['body'])) {
                                 $this->request_error = $response->get_error_message();
-                            }
-                            else if ( $response == "An error occurred" || ( isset($response['body']) && $response['body'] == "An error occurred") )
-                            {
+                            } elseif ($response == "An error occurred" || ( isset($response['body']) && $response['body'] == "An error occurred")) {
                                 $this->request_error = "WordPress was unable to import from Zotero. This is likely caused by an incorrect citation style name. For example, 'mla' is now 'modern-language-association'. Use the name found in the style's URL at the Zotero Style Repository.";
-                            }
-                            else // no errors this time
+                            } else // no errors this time
                             {
                                 $this->request_error = false;
                             }
                         }
-                    }
-                    else if ( $response == "An error occurred" || ( isset($response['body']) && $response['body'] == "An error occurred") )
-                    {
+                    } elseif ($response == "An error occurred" || ( isset($response['body']) && $response['body'] == "An error occurred")) {
                         $this->request_error = "WordPress was unable to import from Zotero. This is likely caused by an incorrect citation style name. For example, 'mla' is now 'modern-language-association'. Use the name found in the style's URL at the Zotero Style Repository.";
                     }
 
@@ -291,7 +283,7 @@ if ( ! class_exists('ZotpressRequest') )
                             $tags = array(); // empty for now; by item key later
 
                             // If not array, turn into one for simplicity
-                            if ( is_array($data) === false ) $data = array($data);
+                            if ( !is_array($data) ) $data = array($data);
 
                             // Remove unncessary details
                             // REVIEW: Does this account for all unused metadata? Depends on item type ...

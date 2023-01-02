@@ -1,14 +1,14 @@
 === Zotpress ===
-Contributors: kseaborn
+Contributors: kseaborn, kfeuerherm
 Plugin Name: Zotpress
 Plugin URI: http://katieseaborn.com/plugins/
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5HQ8FXAXS9MUQ
 Tags: zotero, zotpress, citation manager, citations, citation, cite, citing, bibliography, bibliographies, reference, referencing, references, reference list, reference manager, academic, academic blogging, academia, scholar, scholarly, scholarly blogging, cv, curriculum vitae, resume, publish, publication, publications
 Author URI: http://katieseaborn.com/
-Author: Katie Seaborn
+Author: Katie Seaborn; this PHP Testing version courtesy of K.G. Feuerherm
 Requires at least: 3.5
 Tested up to: 5.9.3
-Stable tag: 7.3.1.2
+Stable tag: PHP 8 Testing, not proven stable!
 License: Apache2.0
 
 Zotpress displays your Zotero citations on WordPress.

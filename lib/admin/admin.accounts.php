@@ -5,9 +5,9 @@ if ( current_user_can('edit_others_posts') )
 {
 
 	// Determine if server supports OAuth
-	if (in_array ('oauth', get_loaded_extensions())) { $oauth_is_not_installed = false; } else { $oauth_is_not_installed = true; }
+	$oauth_is_not_installed = !in_array ('oauth', get_loaded_extensions());
 
-	if (isset( $_GET['oauth'] )) { include("admin.accounts.oauth.php"); } else {
+	if (isset( $_GET['oauth'] )) { include(__DIR__ . "/admin.accounts.oauth.php"); } else {
 
 	?>
 
@@ -47,7 +47,7 @@ if ( current_user_can('edit_others_posts') )
 
 							foreach ($accounts as $num => $account)
 							{
-								if ($num % 2 == 0) { $zebra = " alternate"; } else { $zebra = ""; }
+								$zebra = $num % 2 == 0 ? " alternate" : "";
 
 								$code = "<tr id='zp-Account-" . $account->api_user_id . "' class='zp-Account".$zebra."' rel='" . $account->api_user_id . "'>\n";
 

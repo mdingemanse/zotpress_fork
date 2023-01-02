@@ -45,9 +45,11 @@ function Zotpress_zotpressInTextBib ($atts)
     $style = str_replace('"','',html_entity_decode($style));
     $sortby = str_replace('"','',html_entity_decode($sortby));
 
-    if ($order) $order = str_replace('"','',html_entity_decode($order));
-    else if ($sort) $order = str_replace('"','',html_entity_decode($sort));
-    else $order = "asc";
+    if ($order) {
+        $order = str_replace('"','',html_entity_decode($order));
+    } elseif ($sort) {
+        $order = str_replace('"','',html_entity_decode($sort));
+    } else $order = "asc";
     $order = strtolower($order);
 
     // Show image
@@ -55,35 +57,44 @@ function Zotpress_zotpressInTextBib ($atts)
     if ($image) $showimage = str_replace('"','',html_entity_decode($image));
     if ($images) $showimage = str_replace('"','',html_entity_decode($images));
 
-    if ($showimage == "yes" || $showimage == "true" || $showimage === true ) $showimage = true;
-	else if ( $showimage === "openlib") $showimage = "openlib";
-    else $showimage = false;
+    if ($showimage == "yes" || $showimage == "true" || $showimage === true) {
+        $showimage = true;
+    } elseif ($showimage === "openlib") {
+        $showimage = "openlib";
+    } else $showimage = false;
 
     // Show tags
-    if ($showtags == "yes" || $showtags == "true" || $showtags === true) $showtags = true;
-    else $showtags = false;
+    $showtags = $showtags == "yes" || $showtags == "true" || $showtags === true;
 
     $title = str_replace('"','',html_entity_decode($title));
 
-    if ($download) $download = str_replace('"','',html_entity_decode($download));
-    else if ($downloadable) $download = str_replace('"','',html_entity_decode($downloadable));
-    if ($download == "yes" || $download == "true" || $download === true) $download = true; else $download = false;
+    if ($download) {
+        $download = str_replace('"','',html_entity_decode($download));
+    } elseif ($downloadable) {
+        $download = str_replace('"','',html_entity_decode($downloadable));
+    }
+    $download = $download == "yes" || $download == "true" || $download === true;
 
     $shownotes = str_replace('"','',html_entity_decode($notes));
 
-    if ($abstracts) $abstracts = str_replace('"','',html_entity_decode($abstracts));
-    else if ($abstract) $abstracts = str_replace('"','',html_entity_decode($abstract));
+    if ($abstracts) {
+        $abstracts = str_replace('"','',html_entity_decode($abstracts));
+    } elseif ($abstract) {
+        $abstracts = str_replace('"','',html_entity_decode($abstract));
+    }
 
-    if ($citeable) $citeable = str_replace('"','',html_entity_decode($citeable));
-    else if ($cite) $citeable = str_replace('"','',html_entity_decode($cite));
+    if ($citeable) {
+        $citeable = str_replace('"','',html_entity_decode($citeable));
+    } elseif ($cite) {
+        $citeable = str_replace('"','',html_entity_decode($cite));
+    }
 
     if ($target == "new" || $target == "yes" || $target == "_blank" || $target == "true" || $target === true) $target = true;
     else $target = false;
 
-    if ($urlwrap == "title" || $urlwrap == "image" )
-	$urlwrap = str_replace('"','',html_entity_decode($urlwrap)); else $urlwrap = false;
+    $urlwrap = $urlwrap == "title" || $urlwrap == "image" ? str_replace('"','',html_entity_decode($urlwrap)) : false;
 
-    if ($highlight ) $highlight = str_replace('"','',html_entity_decode($highlight)); else $highlight = false;
+    $highlight = $highlight ? str_replace('"','',html_entity_decode($highlight)) : false;
 
     if ($forcenumber == "yes" || $forcenumber == "true" || $forcenumber === true)
         $forcenumber = true;
@@ -199,12 +210,10 @@ function Zotpress_zotpressInTextBib ($atts)
     $zp_output .= Zotpress_shortcode_request( true ); // Check catche first
     $zp_output .= "</div><!-- .zp-zp-SEO-Content -->\n";
 
-    $zp_output .= "</div><!-- .zp-List --></div><!--.zp-Zotpress-->\n\n";
-
 	// Show theme scripts
 	$GLOBALS['zp_is_shortcode_displayed'] = true;
 
-	return $zp_output;
+	return $zp_output . "</div><!-- .zp-List --></div><!--.zp-Zotpress-->\n\n";
 }
 
 ?>
