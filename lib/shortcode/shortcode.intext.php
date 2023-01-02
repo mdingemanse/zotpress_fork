@@ -37,8 +37,11 @@ function Zotpress_zotpressInText ($atts)
 
 
     // PREPARE ATTRIBUTES
-    if ( $items )         $items = zpStripQuotes( str_replace(" ", "", $items ));
-    else if ( $item )     $items = zpStripQuotes( str_replace(" ", "", $item ));
+    if ($items) {
+        $items = zpStripQuotes( str_replace(" ", "", $items ));
+    } elseif ($item) {
+        $items = zpStripQuotes( str_replace(" ", "", $item ));
+    }
 
     $pages =              zpStripQuotes( $pages );
     $format =             zpStripQuotes( $format );
@@ -70,22 +73,15 @@ function Zotpress_zotpressInText ($atts)
 
     $zp_account = false;
 
-    if ( $nickname !== false )
-    {
+    if ($nickname !== false) {
         $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE nickname='".$nickname."'", OBJECT);
-
         if ( $zp_account !== null )
             $api_user_id = $zp_account->api_user_id;
-    }
-    else if ( $api_user_id !== false )
-    {
+    } elseif ($api_user_id !== false) {
         $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".$api_user_id."'", OBJECT);
-
         if ( $zp_account !== null )
             $api_user_id = $zp_account->api_user_id;
-    }
-    else if ( $api_user_id === false && $nickname === false )
-    {
+    } elseif ($api_user_id === false && $nickname === false) {
         if ( get_option("Zotpress_DefaultAccount") !== false )
         {
             $api_user_id = get_option("Zotpress_DefaultAccount");
@@ -122,20 +118,13 @@ function Zotpress_zotpressInText ($atts)
     // if ( strpos( $items, $api_user_id ) === false ) // WRONG: assumes default/global api_user_id rather than the one for this shortcode
     if ( strpos( $items, ":" ) === false )
     {
-        if ( strpos( $items, "{" ) !== false )
-        {
+        if (strpos( $items, "{" ) !== false) {
             $items = str_replace( "{", "{".$api_user_id.":", $items );
-        }
-        else // no curly brackets -- so add them!
+        } elseif (strpos( $items, "," ) !== false) {
+            $items = "{".$api_user_id.":" . str_replace( ",", "},{".$api_user_id.":", $items )."}";
+        } else // assume unformatted and single, so place at front
         {
-            if ( strpos( $items, "," ) !== false )
-            {
-                $items = "{".$api_user_id.":" . str_replace( ",", "},{".$api_user_id.":", $items )."}";
-            }
-            else // assume unformatted and single, so place at front
-            {
-                $items = "{".$api_user_id.":".$items."}";
-            }
+            $items = "{".$api_user_id.":".$items."}";
         }
     }
 

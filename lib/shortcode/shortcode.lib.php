@@ -1,7 +1,7 @@
 <?php
 
 
-require('shortcode.class.lib.php');
+require(__DIR__ . '/shortcode.class.lib.php');
 
 function Zotpress_zotpressLib( $atts )
 {
@@ -51,27 +51,33 @@ function Zotpress_zotpressLib( $atts )
     // FORMAT PARAMETERS
 
     // Filter by account
-    if ($user_id) $api_user_id = str_replace('"','',html_entity_decode($user_id));
-    else if ($userid) $api_user_id = str_replace('"','',html_entity_decode($userid));
-    else $api_user_id = false;
+    if ($user_id) {
+        $api_user_id = str_replace('"','',html_entity_decode($user_id));
+    } elseif ($userid) {
+        $api_user_id = str_replace('"','',html_entity_decode($userid));
+    } else $api_user_id = false;
 
     if ($nickname) $nickname = str_replace('"','',html_entity_decode($nickname));
     if ($nick) $nickname = str_replace('"','',html_entity_decode($nick));
 
 
 	// Type of display
-	if ( $type ) $type = str_replace('"','',html_entity_decode($type)); else $type = "dropdown";
+	$type = $type ? str_replace('"','',html_entity_decode($type)) : "dropdown";
 
     // Filter by collection
-    if ($collection_id) $collection_id = zp_clean_param( $collection_id );
-    else if ($collection) $collection_id = zp_clean_param( $collection );
-    else if ($collections) $collection_id = zp_clean_param( $collections );
-    else if ( isset($_GET['collection_id'])
-            && preg_match("/^[a-zA-Z0-9]+$/", $_GET['collection_id']) )
-       $collection_id = zp_clean_param( $_GET['collection_id'] );
-    else if ( isset($_GET['subcollection_id'])
-            && preg_match("/^[a-zA-Z0-9]+$/", $_GET['subcollection_id']) )
-       $collection_id = zp_clean_param( $_GET['subcollection_id'] );
+    if ($collection_id) {
+        $collection_id = zp_clean_param( $collection_id );
+    } elseif ($collection) {
+        $collection_id = zp_clean_param( $collection );
+    } elseif ($collections) {
+        $collection_id = zp_clean_param( $collections );
+    } elseif (isset($_GET['collection_id'])
+            && preg_match("/^[a-zA-Z0-9]+$/", $_GET['collection_id'])) {
+        $collection_id = zp_clean_param( $_GET['collection_id'] );
+    } elseif (isset($_GET['subcollection_id'])
+            && preg_match("/^[a-zA-Z0-9]+$/", $_GET['subcollection_id'])) {
+        $collection_id = zp_clean_param( $_GET['subcollection_id'] );
+    }
 
 	// Filters
 	if ( $searchby ) $searchby = str_replace('"','',html_entity_decode($searchby));
@@ -117,7 +123,7 @@ function Zotpress_zotpressLib( $atts )
 
     if ( $toplevel ) $toplevel = str_replace('"','',html_entity_decode($toplevel));
 
-    if ( $target && $target != "no" ) $target = true; else $target = false;
+    $target = $target && $target != "no";
 
     if ( $browsebar ) $browsebar = str_replace('"','',html_entity_decode($browsebar));
 
@@ -126,24 +132,15 @@ function Zotpress_zotpressLib( $atts )
 
 	global $wpdb;
 
-    if ($nickname !== false)
-    {
+    if ($nickname !== false) {
         $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE nickname='".$nickname."'", OBJECT);
-
-		if ( is_null($zp_account) ): echo "<p>Sorry, but the selected Zotpress nickname can't be found.</p>"; return false; endif;
-
+        if ( is_null($zp_account) ): echo "<p>Sorry, but the selected Zotpress nickname can't be found.</p>"; return false; endif;
         $api_user_id = $zp_account->api_user_id;
-    }
-    else if ($api_user_id !== false)
-    {
+    } elseif ($api_user_id !== false) {
         $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".$api_user_id."'", OBJECT);
-
-		if ( is_null($zp_account) ): echo $api_user_id."<p>Sorry, but the selected Zotpress account can't be found.</p>"; return false; endif;
-
+        if ( is_null($zp_account) ): echo $api_user_id."<p>Sorry, but the selected Zotpress account can't be found.</p>"; return false; endif;
         $api_user_id = $zp_account->api_user_id;
-    }
-    else if ($api_user_id === false && $nickname === false)
-    {
+    } elseif ($api_user_id === false && $nickname === false) {
         if (get_option("Zotpress_DefaultAccount") !== false)
         {
             $api_user_id = get_option("Zotpress_DefaultAccount");

@@ -6,8 +6,8 @@
 	define('WP_USE_THEMES', false);
 
 	// Include Request Functionality
-	require('request.class.php');
-	require('request.functions.php');
+	require(__DIR__ . '/request.class.php');
+	require(__DIR__ . '/request.functions.php');
 
 	// Content prep
 	$zp_xml = false;

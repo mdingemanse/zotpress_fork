@@ -1,15 +1,14 @@
 <?php
 
-    if ( (isset($_GET['accounts']) && $_GET['accounts'] == "true")
+    if ((isset($_GET['accounts']) && $_GET['accounts'] == "true")
 			|| (isset($_GET['selective']) && $_GET['selective'] == "true")
-			|| (isset($_GET['import']) && $_GET['import'] == "true")
-		)
+			|| (isset($_GET['import']) && $_GET['import'] == "true")) {
         $tagpage = "accounts";
-    else if ( isset($_GET['options']) && $_GET['options'] == "true" )
+    } elseif (isset($_GET['options']) && $_GET['options'] == "true") {
         $tagpage = "options";
-    else if ( isset($_GET['help']) && $_GET['help'] == "true" )
+    } elseif (isset($_GET['help']) && $_GET['help'] == "true") {
         $tagpage = "help";
-    else
+    } else
         $tagpage = "default";
 
 ?>

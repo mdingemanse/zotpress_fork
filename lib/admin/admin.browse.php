@@ -9,50 +9,41 @@
 	// Display Browse page if there's at least one Zotero account synced
     if ( $zp_accounts_total > 0 )
     {
-		if ( isset($_GET['api_user_id']) && preg_match("/^[0-9]+$/", $_GET['api_user_id']) )
-		{
-            $zp_account_temp = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".$_GET['api_user_id']."'", OBJECT);
-
-            if ( count((array)$zp_account_temp) > 0 )
-            {
+		if (isset($_GET['api_user_id']) && preg_match("/^\\d+\$/", $_GET['api_user_id'])) {
+      $zp_account_temp = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".$_GET['api_user_id']."'", OBJECT);
+      if ( (array)$zp_account_temp !== [] )
+      {
     			$zp_account = $zp_account_temp;
     			$api_user_id = $zp_account->api_user_id;
-            }
-		}
-		else
-		{
-			if ( get_option("Zotpress_DefaultAccount") )
-			{
-				$zp_account_temp = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".get_option("Zotpress_DefaultAccount")."'", OBJECT);
-
-				if ( count((array)$zp_account_temp) > 0 )
-				{
-                    $zp_account = $zp_account_temp;
-					$api_user_id = $zp_account->api_user_id;
-				}
-				else
-				{
-					$zp_account_temp = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress LIMIT 1");
-
-					if ( count((array)$zp_account_temp) > 0 )
-					{
-                        $zp_account = $zp_account_temp;
-    					$api_user_id = $zp_account->api_user_id;
-					}
-				}
-			}
-			else
+      }
+  } elseif (get_option("Zotpress_DefaultAccount")) {
+      $zp_account_temp = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".get_option("Zotpress_DefaultAccount")."'", OBJECT);
+      if ( (array)$zp_account_temp !== [] )
+  				{
+                      $zp_account = $zp_account_temp;
+  					$api_user_id = $zp_account->api_user_id;
+  				}
+  				else
+  				{
+  					$zp_account_temp = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress LIMIT 1");
+  
+  					if ( (array)$zp_account_temp !== [] )
+  					{
+                          $zp_account = $zp_account_temp;
+      					$api_user_id = $zp_account->api_user_id;
+  					}
+  				}
+  } else
 			{
 				$zp_account_temp = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress LIMIT 1");
 
-                if ( ( is_array($zp_account_temp) || is_object($zp_account_temp) || $zp_account_temp instanceof Countable )
-                        && count((array)$zp_account_temp) > 0 )
-                {
-                    $zp_account = $zp_account_temp;
-                    $api_user_id = $zp_account->api_user_id;
+               if ( ( is_array($zp_account_temp) || is_object($zp_account_temp) || $zp_account_temp instanceof Countable )
+                       && (array)$zp_account_temp !== [] )
+               {
+                   $zp_account = $zp_account_temp;
+                   $api_user_id = $zp_account->api_user_id;
 				}
 			}
-		}
 
 
 		// Use Browse class
@@ -127,9 +118,9 @@
 
                     <?php
 
-                    $zp_check_curl = intval( function_exists('curl_version') );
-                    $zp_check_streams = intval( function_exists('stream_get_contents') );
-                    $zp_check_fsock = intval( function_exists('fsockopen') );
+                    $zp_check_curl = (int) function_exists('curl_version');
+                    $zp_check_streams = (int) function_exists('stream_get_contents');
+                    $zp_check_fsock = (int) function_exists('fsockopen');
 
                     if ( ($zp_check_curl + $zp_check_streams + $zp_check_fsock) <= 1 ) { ?>
 

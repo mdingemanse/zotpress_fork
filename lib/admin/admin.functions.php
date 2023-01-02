@@ -69,9 +69,7 @@ function zp_get_accounts($wpdb=false, $use_select=false, $select_req=false, $sel
 				$output .= "</option>\n";
 			}
 
-			$output .= "</select>\n";
-
-			return $output;
+			return $output . "</select>\n";
 		}
 
 	endif; // if $accounts

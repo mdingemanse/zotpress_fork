@@ -35,7 +35,7 @@
 				);
 			}
 
-			if (is_null($zp_account[0]->nickname) === false && $zp_account[0]->nickname != "")
+			if (!is_null($zp_account[0]->nickname) && $zp_account[0]->nickname != "")
 				$zp_default_account = $zp_account[0]->nickname . " (" . $zp_account[0]->api_user_id . ")";
 		?>
 		<!-- START OF ACCOUNT -->
@@ -62,7 +62,7 @@
 		                if ( $zp_account[0]->api_user_id == $account->api_user_id )
 		                    echo ' selected="selected"';
 						echo '>';
-		                if (is_null($account->nickname) === false && $account->nickname != "")
+		                if (!is_null($account->nickname) && $account->nickname != "")
 		                    echo $account->nickname . " - ";
 		                echo $account->api_user_id.'</option>';
 		                echo "\n";

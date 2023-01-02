@@ -41,28 +41,20 @@ function Zotpress_widget_metabox_AJAX_search()
 	global $wpdb;
 
 	// Determine account based on passed account
-    if ( $_GET['api_user_id'] && is_numeric($_GET['api_user_id']) )
-    {
+    if ($_GET['api_user_id'] && is_numeric($_GET['api_user_id'])) {
         $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".$_GET['api_user_id']."'", OBJECT);
         $zp_api_user_id = $zp_account->api_user_id;
         $zp_nickname = $zp_account->nickname;
-    }
-    // If, for some reason, the account isn't passed through
-    else
-    {
-        if (get_option("Zotpress_DefaultAccount"))
-		{
-			$zp_api_user_id = get_option("Zotpress_DefaultAccount");
-            $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".$zp_api_user_id."'", OBJECT);
-            $zp_nickname = $zp_account->nickname;
-		}
-		else
-		{
-			$zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress LIMIT 1", OBJECT);
-			$zp_api_user_id = $zp_account->api_user_id;
-            $zp_nickname = $zp_account->nickname;
-		}
-    }
+    } elseif (get_option("Zotpress_DefaultAccount")) {
+        $zp_api_user_id = get_option("Zotpress_DefaultAccount");
+        $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".$zp_api_user_id."'", OBJECT);
+        $zp_nickname = $zp_account->nickname;
+    } else
+  		{
+  			$zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress LIMIT 1", OBJECT);
+  			$zp_api_user_id = $zp_account->api_user_id;
+              $zp_nickname = $zp_account->nickname;
+  		}
 
 	$zpSearch = array();
 
@@ -79,7 +71,7 @@ function Zotpress_widget_metabox_AJAX_search()
 	// Format Zotero request URL
 	// e.g., https://api.zotero.org/users/#####/items?key=###&format=json&q=###&limit=25
 	$zp_import_url = "https://api.zotero.org/".$zp_account[0]->account_type."/".$zp_account[0]->api_user_id."/items?";
-	if (is_null($zp_account[0]->public_key) === false && trim($zp_account[0]->public_key) != "")
+	if (!is_null($zp_account[0]->public_key) && trim($zp_account[0]->public_key) != "")
 		$zp_import_url .= "key=".$zp_account[0]->public_key."&";
 	$zp_import_url .= "format=json&q=".urlencode($_GET['term'])."&limit=10&itemType=-attachment+||+note";
 
@@ -93,26 +85,26 @@ function Zotpress_widget_metabox_AJAX_search()
 		{
 			// Deal with author(s)
 			$author = "N/A";
-			if ( isset( $zpResult->data->creators ) )
+			if ( property_exists($zpResult->data, 'creators') && $zpResult->data->creators !== null )
 			{
 				$author = "";
 				foreach ( $zpResult->data->creators as $i => $creator)
 				{
-					if ( isset( $creator->name ) )
+					if ( property_exists($creator, 'name') && $creator->name !== null )
 						$author .= $creator->name;
 					else
 						$author .= $creator->lastName;
 
-					if ( $i != (count($zpResult->data->creators)-1) ) $author .= ', ';
+					if ( $i != count($zpResult->data->creators)-1 ) $author .= ', ';
 				}
 			}
 
 			// Deal with label
 			// e.g., (year). title
 			$label = " (";
-			if ( isset( $zpResult->data->date ) && trim($zpResult->data->date) != "" ) $label .= $zpResult->data->date; else $label .= "n.d.";
+			if ( property_exists($zpResult->data, 'date') && $zpResult->data->date !== null && trim($zpResult->data->date) != "" ) $label .= $zpResult->data->date; else $label .= "n.d.";
 			$label .= "). ";
-			$title = "Untitled."; if ( isset( $zpResult->data->title ) && trim($zpResult->data->title) != "" ) $title = $zpResult->data->title . ".";
+			$title = "Untitled."; if ( property_exists($zpResult->data, 'title') && $zpResult->data->title !== null && trim($zpResult->data->title) != "" ) $title = $zpResult->data->title . ".";
 
 			// If no author, use title
 			if ( trim($author) == "" )
@@ -120,9 +112,9 @@ function Zotpress_widget_metabox_AJAX_search()
 				$author = $title;
 				$title = "";
 			}
-			$label = $label . $title;
+			$label .= $title;
 
-			array_push( $zpSearch, array( "api_user_id" => $zp_api_user_id, "nickname" => $zp_nickname, "author" => $author, "label" => $label, "value" => $zpResult->key) );
+			$zpSearch[] = array( "api_user_id" => $zp_api_user_id, "nickname" => $zp_nickname, "author" => $author, "label" => $label, "value" => $zpResult->key);
 		}
 	}
 
@@ -150,7 +142,7 @@ function Zotpress_zpWidgetMetabox_scripts_css($hook)
     // Turn on/off minified versions if testing/live
     $minify = ''; if ( ZOTPRESS_LIVEMODE ) $minify = '.min';
 
-    if ( in_array( $hook, array('post.php', 'post-new.php') ) === true )
+    if ( in_array( $hook, array('post.php', 'post-new.php') ) )
     {
         wp_enqueue_script( 'jquery.livequery.min.js', ZOTPRESS_PLUGIN_URL . 'js/jquery.livequery.min.js', array( 'jquery', 'jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-position', 'jquery-ui-tabs', 'jquery-ui-autocomplete' ) );
         wp_enqueue_script( 'zotpress.widget.metabox'.$minify.'.js', ZOTPRESS_PLUGIN_URL . 'js/zotpress.widget.metabox'.$minify.'.js', array( 'jquery', 'jquery-form', 'json2' ) );

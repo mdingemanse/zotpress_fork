@@ -1,4 +1,4 @@
-            <h3><?php _e('Add a Zotero Account','zotpress'); ?></h3>
+<h3><?php _e('Add a Zotero Account','zotpress'); ?></h3>
 
             <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" id="zp-Add" name="zp-Add">
 
