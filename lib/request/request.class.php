@@ -16,11 +16,11 @@ if ( ! class_exists('ZotpressRequest') )
 {
     class ZotpressRequest
     {
-        var $update = false,
-            $request_error = false,
-            $checkEveryMin = 10, // minutes
-            $api_user_id,
-            $request_type = 'item';
+        public  $update = false,
+                $request_error = false,
+                $checkEveryMin = 10, // minutes
+                $api_user_id,
+                $request_type = 'item';
 
         // REVIEW: This was causing problems for some people ...
         // Could it be how the database is set up?
@@ -167,7 +167,7 @@ if ( ! class_exists('ZotpressRequest') )
                 $zp_results = $wpdb->get_results( $zp_query, OBJECT ); unset($zp_query);
 
                 // Cache exists
-                if ( count($zp_results) != 0 )
+                if ( count($zp_results) > 0 )
                 {
                     $json = $this->zp_gzdecode($zp_results[0]->json);
                     $tags = $this->zp_gzdecode($zp_results[0]->tags);
@@ -214,11 +214,16 @@ if ( ! class_exists('ZotpressRequest') )
             // Then, if no cached version, proceed and save one.
             // Or, if cached version exists, check to see if it's out of date,
             // and return whichever is newer (and cache the newest).
+            // if ( count($zp_results) == 0
+            //         || ( property_exists($zp_results[0], 'retrieved') && $zp_results[0]->retrieved !== null
+            //                 && $this->checkTime($zp_results[0]->retrieved) ) )
+            // {
             if ( count($zp_results) == 0
                     || ( isset($zp_results[0]->retrieved)
                             && $this->checkTime($zp_results[0]->retrieved) ) )
             {
                 $headers_arr = array ( "Zotero-API-Version" => "3" );
+
                 if ( count($zp_results) > 0 )
                     $headers_arr["If-Modified-Since-Version"] = $zp_results[0]->libver;
 
@@ -243,28 +248,26 @@ if ( ! class_exists('ZotpressRequest') )
                             || ! isset($response['body']) )
                     {
                         $this->request_error = $response->get_error_message();
-
                         if ( $response->get_error_code() == "http_request_failed" )
                         {
                             // Try again with less restrictions
                             add_filter('https_ssl_verify', '__return_false');
                             $response = wp_remote_get( $url, array( 'headers' => array("Zotero-API-Version" => "2") ) );
 
-                            if ( is_wp_error($response) || ! isset($response['body']) )
-                            {
+                            if (is_wp_error($response) || ! isset($response['body'])) {
                                 $this->request_error = $response->get_error_message();
-                            }
-                            else if ( $response == "An error occurred" || ( isset($response['body']) && $response['body'] == "An error occurred") )
-                            {
+                            } elseif ($response == "An error occurred" || ( isset($response['body']) && $response['body'] == "An error occurred")) {
                                 $this->request_error = "WordPress was unable to import from Zotero. This is likely caused by an incorrect citation style name. For example, 'mla' is now 'modern-language-association'. Use the name found in the style's URL at the Zotero Style Repository.";
-                            }
-                            else // no errors this time
+                            } else // no errors this time
                             {
                                 $this->request_error = false;
                             }
                         }
                     }
-                    else if ( $response == "An error occurred" || ( isset($response['body']) && $response['body'] == "An error occurred") )
+
+                    elseif ( $response == "An error occurred"
+                            || ( isset($response['body'])
+                                    && $response['body'] == "An error occurred") )
                     {
                         $this->request_error = "WordPress was unable to import from Zotero. This is likely caused by an incorrect citation style name. For example, 'mla' is now 'modern-language-association'. Use the name found in the style's URL at the Zotero Style Repository.";
                     }
@@ -291,7 +294,7 @@ if ( ! class_exists('ZotpressRequest') )
                             $tags = array(); // empty for now; by item key later
 
                             // If not array, turn into one for simplicity
-                            if ( is_array($data) === false ) $data = array($data);
+                            if ( ! is_array($data) ) $data = array($data);
 
                             // Remove unncessary details
                             // REVIEW: Does this account for all unused metadata? Depends on item type ...
@@ -299,47 +302,56 @@ if ( ! class_exists('ZotpressRequest') )
                             {
                                 if ( property_exists($data[$id], 'version') ) unset($data[$id]->version);
                                 if ( property_exists($data[$id], 'links') ) unset($data[$id]->links);
-                                if ( property_exists($data[$id]->library, 'type') ) unset($data[$id]->library->type);
-                                if ( property_exists($data[$id]->library, 'name') ) unset($data[$id]->library->name);
-                                if ( property_exists($data[$id]->library, 'links') ) unset($data[$id]->library->links);
-                                if ( property_exists($data[$id]->data, 'key') ) unset($data[$id]->data->key);
-                                if ( property_exists($data[$id]->data, 'version') ) unset($data[$id]->data->version);
-                                if ( property_exists($data[$id]->data, 'series') ) unset($data[$id]->data->series);
-                                if ( property_exists($data[$id]->data, 'seriesNumber') ) unset($data[$id]->data->seriesNumber);
-                                if ( property_exists($data[$id]->data, 'seriesTitle') ) unset($data[$id]->data->seriesTitle);
-                                if ( property_exists($data[$id]->data, 'seriesText') ) unset($data[$id]->data->seriesText);
-                                if ( property_exists($data[$id]->data, 'publicationTitle') ) unset($data[$id]->data->publicationTitle);
-                                if ( property_exists($data[$id]->data, 'journalAbbreviation') ) unset($data[$id]->data->journalAbbreviation);
-                                if ( property_exists($data[$id]->data, 'issue') ) unset($data[$id]->data->issue);
-                                if ( property_exists($data[$id]->data, 'volume') ) unset($data[$id]->data->volume);
-                                if ( property_exists($data[$id]->data, 'numberOfVolumes') ) unset($data[$id]->data->numberOfVolumes);
-                                if ( property_exists($data[$id]->data, 'edition') ) unset($data[$id]->data->edition);
-                                if ( property_exists($data[$id]->data, 'place') ) unset($data[$id]->data->place);
-                                if ( property_exists($data[$id]->data, 'publisher') ) unset($data[$id]->data->publisher);
-                                if ( property_exists($data[$id]->data, 'pages') ) unset($data[$id]->data->pages);
-                                if ( property_exists($data[$id]->data, 'numPages') ) unset($data[$id]->data->numPages);
-                                if ( property_exists($data[$id]->data, 'shortTitle') ) unset($data[$id]->data->shortTitle);
-                                if ( property_exists($data[$id]->data, 'accessDate') ) unset($data[$id]->data->accessDate);
-                                if ( property_exists($data[$id]->data, 'archive') ) unset($data[$id]->data->archive);
-                                if ( property_exists($data[$id]->data, 'archiveLocation') ) unset($data[$id]->data->archiveLocation);
-                                if ( property_exists($data[$id]->data, 'libraryCatalog') ) unset($data[$id]->data->libraryCatalog);
-                                if ( property_exists($data[$id]->data, 'callNumber') ) unset($data[$id]->data->callNumber);
-                                if ( property_exists($data[$id]->data, 'rights') ) unset($data[$id]->data->rights);
-                                if ( property_exists($data[$id]->data, 'extra') ) unset($data[$id]->data->extra);
-                                if ( property_exists($data[$id]->data, 'relations') ) unset($data[$id]->data->relations);
-                                if ( property_exists($data[$id]->data, 'dateAdded') ) unset($data[$id]->data->dateAdded);
-                                if ( property_exists($data[$id]->data, 'websiteTitle') ) unset($data[$id]->data->websiteTitle);
-                                if ( property_exists($data[$id]->data, 'websiteType') ) unset($data[$id]->data->websiteType);
-                                if ( property_exists($data[$id]->data, 'inPublications') ) unset($data[$id]->data->inPublications);
-                                if ( property_exists($data[$id]->data, 'presentationType') ) unset($data[$id]->data->presentationType);
-                                if ( property_exists($data[$id]->data, 'meetingName') ) unset($data[$id]->data->meetingName);
+
+                                if ( property_exists($data[$id], 'library') )
+                                {
+                                    if ( property_exists($data[$id]->library, 'type') ) unset($data[$id]->library->type);
+                                    if ( property_exists($data[$id]->library, 'name') ) unset($data[$id]->library->name);
+                                    if ( property_exists($data[$id]->library, 'links') ) unset($data[$id]->library->links);
+                                }
+                                if ( property_exists($data[$id], 'data') )
+                                {
+                                    if ( property_exists($data[$id]->data, 'key') ) unset($data[$id]->data->key);
+                                    if ( property_exists($data[$id]->data, 'version') ) unset($data[$id]->data->version);
+                                    if ( property_exists($data[$id]->data, 'series') ) unset($data[$id]->data->series);
+                                    if ( property_exists($data[$id]->data, 'seriesNumber') ) unset($data[$id]->data->seriesNumber);
+                                    if ( property_exists($data[$id]->data, 'seriesTitle') ) unset($data[$id]->data->seriesTitle);
+                                    if ( property_exists($data[$id]->data, 'seriesText') ) unset($data[$id]->data->seriesText);
+                                    if ( property_exists($data[$id]->data, 'publicationTitle') ) unset($data[$id]->data->publicationTitle);
+                                    if ( property_exists($data[$id]->data, 'journalAbbreviation') ) unset($data[$id]->data->journalAbbreviation);
+                                    if ( property_exists($data[$id]->data, 'issue') ) unset($data[$id]->data->issue);
+                                    if ( property_exists($data[$id]->data, 'volume') ) unset($data[$id]->data->volume);
+                                    if ( property_exists($data[$id]->data, 'numberOfVolumes') ) unset($data[$id]->data->numberOfVolumes);
+                                    if ( property_exists($data[$id]->data, 'edition') ) unset($data[$id]->data->edition);
+                                    if ( property_exists($data[$id]->data, 'place') ) unset($data[$id]->data->place);
+                                    if ( property_exists($data[$id]->data, 'publisher') ) unset($data[$id]->data->publisher);
+                                    if ( property_exists($data[$id]->data, 'pages') ) unset($data[$id]->data->pages);
+                                    if ( property_exists($data[$id]->data, 'numPages') ) unset($data[$id]->data->numPages);
+                                    if ( property_exists($data[$id]->data, 'shortTitle') ) unset($data[$id]->data->shortTitle);
+                                    if ( property_exists($data[$id]->data, 'accessDate') ) unset($data[$id]->data->accessDate);
+                                    if ( property_exists($data[$id]->data, 'archive') ) unset($data[$id]->data->archive);
+                                    if ( property_exists($data[$id]->data, 'archiveLocation') ) unset($data[$id]->data->archiveLocation);
+                                    if ( property_exists($data[$id]->data, 'libraryCatalog') ) unset($data[$id]->data->libraryCatalog);
+                                    if ( property_exists($data[$id]->data, 'callNumber') ) unset($data[$id]->data->callNumber);
+                                    if ( property_exists($data[$id]->data, 'rights') ) unset($data[$id]->data->rights);
+                                    if ( property_exists($data[$id]->data, 'extra') ) unset($data[$id]->data->extra);
+                                    if ( property_exists($data[$id]->data, 'relations') ) unset($data[$id]->data->relations);
+                                    if ( property_exists($data[$id]->data, 'dateAdded') ) unset($data[$id]->data->dateAdded);
+                                    if ( property_exists($data[$id]->data, 'websiteTitle') ) unset($data[$id]->data->websiteTitle);
+                                    if ( property_exists($data[$id]->data, 'websiteType') ) unset($data[$id]->data->websiteType);
+                                    if ( property_exists($data[$id]->data, 'inPublications') ) unset($data[$id]->data->inPublications);
+                                    if ( property_exists($data[$id]->data, 'presentationType') ) unset($data[$id]->data->presentationType);
+                                    if ( property_exists($data[$id]->data, 'meetingName') ) unset($data[$id]->data->meetingName);
+                                }
 
                                 // As of 7.1.4, tags are saved separately
                                 // due to possibily large quantities and the
                                 // limits of blob; so we always save now
                                 // REVIEW: Do we need the account, too?
                                 $tags[$item->key] = "";
-                                if ( property_exists($data[$id]->data, 'tags') )
+
+                                if ( property_exists($data[$id], 'data')
+                                        && property_exists($data[$id]->data, 'tags') )
                                 {
                                     $tags[$item->key] = $data[$id]->data->tags;
                                     unset($data[$id]->data->tags);

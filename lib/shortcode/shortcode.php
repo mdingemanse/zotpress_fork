@@ -1,7 +1,7 @@
 <?php
 
-require('shortcode.functions.php');
-require('shortcode.request.php');
+require(__DIR__ . '/shortcode.functions.php');
+require(__DIR__ . '/shortcode.request.php');
 
 
 function Zotpress_func( $atts )
@@ -80,9 +80,11 @@ function Zotpress_func( $atts )
     // FORMAT & CLEAN PARAMETERS
 
     // Filter by account
-    if ($user_id) $api_user_id = zp_clean_param( $user_id );
-    else if ($userid) $api_user_id = zp_clean_param( $userid );
-    else $api_user_id = false;
+    if ($user_id) {
+        $api_user_id = zp_clean_param( $user_id );
+    } elseif ($userid) {
+        $api_user_id = zp_clean_param( $userid );
+    } else $api_user_id = false;
 
     if ($nickname) $nickname = zp_clean_param( $nickname );
     if ($nick) $nickname = zp_clean_param( $nick );
@@ -92,10 +94,13 @@ function Zotpress_func( $atts )
     if ($authors) $author = zp_clean_param( $authors );
 
     // Filter by year
-    if ( $year ) $year = zp_clean_param( $year );
-    else if ($years) $year = zp_clean_param( $years );
-    else if (strpos($year, ",") > 0) $year = explode(",", $year);
-	else $year = "";
+    if ($year) {
+        $year = zp_clean_param( $year );
+    } elseif ($years) {
+        $year = zp_clean_param( $years );
+    } elseif (strpos($year, ",") > 0) {
+        $year = explode(",", $year);
+    } else $year = "";
 
     // Filter by itemtype
     // TODO: Allow for a list of itemtypes in one shortcode?
@@ -147,28 +152,36 @@ function Zotpress_func( $atts )
         foreach ($officialItemTypes as $type)
             if ( $itemtype == $type ) $itemtypeCheck = true;
 
-        if ( $itemtypeCheck !== true )
+        if ( !$itemtypeCheck )
             $itemtype = false; // Default is no itemtype filter
     }
 
     // Format with datatype and content
-    if ($item_type) $item_type = zp_clean_param( $item_type );
-    else if ($data_type) $item_type = zp_clean_param( $data_type );
-    else $item_type = zp_clean_param( $datatype );
+    if ($item_type) {
+        $item_type = zp_clean_param( $item_type );
+    } elseif ($data_type) {
+        $item_type = zp_clean_param( $data_type );
+    } else $item_type = zp_clean_param( $datatype );
 
     // Filter by collection
-    if ($collection_id) $collection_id = zp_clean_param( $collection_id );
-    else if ($collection) $collection_id = zp_clean_param( $collection );
-    else if ($collections) $collection_id = zp_clean_param( $collections );
+    if ($collection_id) {
+        $collection_id = zp_clean_param( $collection_id );
+    } elseif ($collection) {
+        $collection_id = zp_clean_param( $collection );
+    } elseif ($collections) {
+        $collection_id = zp_clean_param( $collections );
+    }
 	$collection_id = str_replace(" ", "", $collection_id );
 
     if (strpos($collection_id, ",") > 0) $collection_id = explode(",", $collection_id);
     if ($item_type == "collections" && isset($_GET['zpcollection']) ) $collection_id = htmlentities( urldecode( $_GET['zpcollection'] ) );
 
     // Filter by tag
-    if ($tag_name) $tag_id = zp_clean_param( $tag_name );
-    else if ($tags) $tag_id = zp_clean_param( $tags );
-    else $tag_id = zp_clean_param( $tag );
+    if ($tag_name) {
+        $tag_id = zp_clean_param( $tag_name );
+    } elseif ($tags) {
+        $tag_id = zp_clean_param( $tags );
+    } else $tag_id = zp_clean_param( $tag );
 
     $tag_id = str_replace("+", "", $tag_id);
     if (strpos($tag_id, ",") > 0) $tag_id = explode(",", $tag_id);
@@ -183,7 +196,7 @@ function Zotpress_func( $atts )
 	$item_key = str_replace(" ", "", $item_key ); // remove any spaces
 
 	// Inclusive (for multiple authors)
-    if ($inclusive == "yes" || $inclusive == "true" || $inclusive === true ) $inclusive = true; else $inclusive = false;
+    $inclusive = $inclusive == "yes" || $inclusive == "true" || $inclusive === true;
 
     // Format style
     $style = zp_clean_param( $style );
@@ -194,30 +207,35 @@ function Zotpress_func( $atts )
     // Order / sort
     $sortby = zp_clean_param( $sortby );
 
-    if ($order) $order = strtolower(zp_clean_param( $order ));
-    else if ($sort) $order = strtolower(zp_clean_param( $sort ));
+    if ($order) {
+        $order = strtolower(zp_clean_param( $order ));
+    } elseif ($sort) {
+        $order = strtolower(zp_clean_param( $sort ));
+    }
     if ($order === false) $order = "asc";
 
     // Show title
 	// Sorting by secondary sort
     $title = zp_clean_param( $title );
-    if ( $title == "yes" || $title == "true" || $title === true )
+    if ($title == "yes" || $title == "true" || $title === true) {
         $title = "year";
-    else if ( $title == "no" || $title == "false" )
+    } elseif ($title == "no" || $title == "false") {
         $title = false;
+    }
 
     // Show image
     if ($showimage) $showimage = zp_clean_param( $showimage );
     if ($image) $showimage = zp_clean_param( $image );
     if ($images) $showimage = zp_clean_param( $images );
 
-    if ($showimage == "yes" || $showimage == "true" || $showimage === true ) $showimage = true;
-	else if ( $showimage === "openlib") $showimage = "openlib";
-    else $showimage = false;
+    if ($showimage == "yes" || $showimage == "true" || $showimage === true) {
+        $showimage = true;
+    } elseif ($showimage === "openlib") {
+        $showimage = "openlib";
+    } else $showimage = false;
 
     // Show tags
-    if ($showtags == "yes" || $showtags == "true" || $showtags === true) $showtags = true;
-    else $showtags = false;
+    $showtags = $showtags == "yes" || $showtags == "true" || $showtags === true;
 
     // Show download link
     if ($download == "yes" || $download == "true" || $download === true
@@ -225,26 +243,27 @@ function Zotpress_func( $atts )
         $downloadable = true; else $downloadable = false;
 
     // Show notes
-    if ($shownotes) $shownotes = zp_clean_param( $shownotes );
-    else if ($notes) $shownotes = zp_clean_param( $notes );
-    else if ($note) $shownotes = zp_clean_param( $note );
+    if ($shownotes) {
+        $shownotes = zp_clean_param( $shownotes );
+    } elseif ($notes) {
+        $shownotes = zp_clean_param( $notes );
+    } elseif ($note) {
+        $shownotes = zp_clean_param( $note );
+    }
 
-    if ($notes == "yes" || $notes == "true" || $notes === true) $shownotes = true;
-    else $shownotes = false;
+    $shownotes = $notes == "yes" || $notes == "true" || $notes === true;
 
     // Show abstracts
     if ($abstracts) $abstracts = zp_clean_param( $abstracts );
     if ($abstract) $abstracts = zp_clean_param( $abstract );
 
-    if ($abstracts == "yes" || $abstracts == "true" || $abstracts === true) $abstracts = true;
-    else $abstracts = false;
+    $abstracts = $abstracts == "yes" || $abstracts == "true" || $abstracts === true;
 
     // Show cite link
     if ($cite) $citeable = zp_clean_param( $cite );
     if ($citeable) $citeable = zp_clean_param( $citeable );
 
-    if ($citeable == "yes" || $citeable == "true" || $citeable === true) $citeable = true;
-    else $citeable = false;
+    $citeable = $citeable == "yes" || $citeable == "true" || $citeable === true;
 
     if ( ! preg_match("/^[0-9a-zA-Z]+$/", $metadata) ) $metadata = false;
 
@@ -252,10 +271,9 @@ function Zotpress_func( $atts )
     if ($target == "yes" || $target == "_blank" || $target == "new" || $target == "true" || $target === true)
     $target = true; else $target = false;
 
-    if ($urlwrap == "title" || $urlwrap == "image" ) $urlwrap = zp_clean_param( $urlwrap );
-	else $urlwrap = false;
+    $urlwrap = $urlwrap == "title" || $urlwrap == "image" ? zp_clean_param( $urlwrap ) : false;
 
-    if ($highlight ) $highlight = zp_clean_param( $highlight ); else $highlight = false;
+    $highlight = $highlight ? zp_clean_param( $highlight ) : false;
 
     if ( $forcenumber == "yes" || $forcenumber == "true" || $forcenumber === true
             || $forcenumbers == "yes" || $forcenumbers == "true" || $forcenumbers === true )
@@ -276,28 +294,19 @@ function Zotpress_func( $atts )
     // Get account (api_user_id)
     $zp_account = false;
 
-    if ($nickname !== false)
-    {
+    if ($nickname !== false) {
         $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE nickname='".$nickname."'", OBJECT);
-
-		if ( is_null($zp_account) ):
-            return "<p>Sorry, but the selected Zotpress nickname can't be found.</p>";
-        endif;
-
+        if ( is_null($zp_account) ):
+                  return "<p>Sorry, but the selected Zotpress nickname can't be found.</p>";
+              endif;
         $api_user_id = $zp_account->api_user_id;
-    }
-    else if ($api_user_id !== false)
-    {
+    } elseif ($api_user_id !== false) {
         $zp_account = $wpdb->get_row("SELECT * FROM ".$wpdb->prefix."zotpress WHERE api_user_id='".$api_user_id."'", OBJECT);
-
-		if ( is_null($zp_account) ):
-            return "<p>Sorry, but the selected Zotpress account can't be found.</p>";
-        endif;
-
+        if ( is_null($zp_account) ):
+                  return "<p>Sorry, but the selected Zotpress account can't be found.</p>";
+              endif;
         $api_user_id = $zp_account->api_user_id;
-    }
-    else if ($api_user_id === false && $nickname === false)
-    {
+    } elseif ($api_user_id === false && $nickname === false) {
         if (get_option("Zotpress_DefaultAccount") !== false)
         {
             $api_user_id = get_option("Zotpress_DefaultAccount");
@@ -311,24 +320,24 @@ function Zotpress_func( $atts )
     }
 
     // Generate instance id for shortcode
-	if ( is_array( $item_key ) ) $temp_item_key = implode( "-", $item_key); else $temp_item_key = $item_key;
-	if ( is_array( $collection_id ) ) $temp_collection_id = implode( "-", $collection_id); else $temp_collection_id = $collection_id;
-	if ( is_array( $tag_id ) ) $temp_tag_name = implode( "-", $tag_id); else $temp_tag_name = $tag_id;
-	if ( is_array( $author ) ) $temp_author = implode( "-", $author); else $temp_author = $author;
-	if ( is_array( $year ) ) $temp_year = implode( "-", $year); else $temp_year = $year;
-	if ( is_array( $sortby ) ) $temp_sortby = implode( "-", $sortby); else $temp_sortby = $sortby;
+	$temp_item_key = is_array( $item_key ) ? implode( "-", $item_key) : $item_key;
+	$temp_collection_id = is_array( $collection_id ) ? implode( "-", $collection_id) : $collection_id;
+	$temp_tag_name = is_array( $tag_id ) ? implode( "-", $tag_id) : $tag_id;
+	$temp_author = is_array( $author ) ? implode( "-", $author) : $author;
+	$temp_year = is_array( $year ) ? implode( "-", $year) : $year;
+	$temp_sortby = is_array( $sortby ) ? implode( "-", $sortby) : $sortby;
 
     // REVIEW: Added post ID
     $instance_id = "zotpress-".md5(get_the_ID().$api_user_id.$nickname.$temp_author.$temp_year.$itemtype.$item_type.$temp_collection_id.$temp_item_key.$temp_tag_name.$style.$temp_sortby.$order.$limit.$showimage.$showtags.$downloadable.$shownotes.$citeable.$inclusive);
 
 	// Prepare item key
-	if ( $item_key ) if ( gettype( $item_key ) != "string" ) $item_key = implode( ",", $item_key );
+	if ( $item_key && gettype( $item_key ) != "string" ) $item_key = implode( ",", $item_key );
 
 	// Prepare collection
-	if ( $collection_id ) if ( gettype( $collection_id ) != "string" ) $collection_id = implode( ",", $collection_id );
+	if ( $collection_id && gettype( $collection_id ) != "string" ) $collection_id = implode( ",", $collection_id );
 
 	// Prepare tags
-	if ( $tag_id ) if ( gettype( $tag_id ) != "string" ) $tag_id = implode( ",", $tag_id );
+	if ( $tag_id && gettype( $tag_id ) != "string" ) $tag_id = implode( ",", $tag_id );
 
     // Set up request vars
     $request_start = 0;
@@ -429,14 +438,12 @@ function Zotpress_func( $atts )
         $zp_output .= "</div><!-- .zp-zp-SEO-Content -->\n";
     }
 
-	$zp_output .= "</div><!-- .zp-List --></div><!--.zp-Zotpress-->\n\n";
-
 
 	// Indicate that shortcode is displayed
 
 	$GLOBALS['zp_is_shortcode_displayed'] = true;
 
-	return $zp_output;
+	return $zp_output . "</div><!-- .zp-List --></div><!--.zp-Zotpress-->\n\n";
 }
 
 ?>

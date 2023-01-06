@@ -12,7 +12,7 @@
   */
 function Zotpress_shortcode_request( $checkcache = false )
 {
-	$is_ajax = isset($_GET['zpShortcode_nonce']) ? true : false;
+	$is_ajax = isset($_GET['zpShortcode_nonce']);
 
 	if ( $is_ajax )
 		check_ajax_referer( 'zpShortcode_nonce_val', 'zpShortcode_nonce' );
@@ -63,7 +63,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 		$zpr["get_top"] = false;
 
 	// Account for collection_id + get_top
-	if ( $zpr["get_top"] !== false
+	if ( $zpr["get_top"]
 			&& $zpr["collection_id"] !== false )
 	{
 		$zpr["get_top"] = false;
@@ -76,7 +76,8 @@ function Zotpress_shortcode_request( $checkcache = false )
 	{
 		$zpr["sortby"] = "numItems"; // title
 		$zpr["order"] = "desc"; // asc
-		$zpr["limit"] = "100"; if ( $zpr["maxtags"] ) $zpr["limit"] = $zpr["maxtags"];
+		$zpr["limit"] = 100; if ( $zpr["maxtags"] ) $zpr["limit"] = $zpr["maxtags"];
+		$zpr["overwrite_last_request"] = $zpr["limit"]; // QUESTION: Unsure
 		$zpr["overwrite_request"] = true;
 
 		// REVIEW: we don't want tags within a collection,
@@ -89,7 +90,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 	if ( $zpr["maxresults"] )
 	{
 		// If 50 or less, set as limit
-		if ( intval($zpr["maxresults"]) <= 50 )
+		if ( (int) $zpr["maxresults"] <= 50 )
 		{
 			$zpr["limit"] = $zpr["maxresults"];
 			$zpr["overwrite_request"] = true;
@@ -101,6 +102,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 			$zpr["overwrite_last_request"] = $zpr["maxresults"];
 		}
 	}
+
 
 	// Handle the possible formats of item/s for bib and in-text
 	// REVIEW: Actually, removed page numbers (if any) in shortcode.intext.php
@@ -117,46 +119,41 @@ function Zotpress_shortcode_request( $checkcache = false )
 	// [zotpress item="GMGCJU34"]
 	// [zotpress items="GMGCJU34,U9Z5JTKC"]
 	// [zotpress item="{000001:XH4BS8MA},{000001:CN73PTWE},{000003:CZR96TX9}"]
-
 	// BASICALLY: Create a list of unique item keys per API User ID
-	if ( $zpr["item_key"] )
+	// REVIEW: Deal with everything!!!!!!! In the new format
+	if ( $zpr["item_key"]
+			&& strpos( $zpr["item_key"], ":" ) !== false )
 	{
-		// REVIEW: Deal with everything!!!!!!! In the new format
-		if ( strpos( $zpr["item_key"], ":" ) !== false )
+		$zp_items = preg_split( "/((;)|(,))+/", $zpr["item_key"] );
+
+     	foreach ( $zp_items as $id => $zp_item_data )
 		{
-			$zp_items = preg_split( "/((;)|(,))+/", $zpr["item_key"] );
+			$zp_item = explode( ":", substr( $zp_item_data, 1, -1 ) );
 
-			foreach ( $zp_items as $id => $zp_item_data )
+			// Create items queue for API User ID, if it doesn't exist
+			if ( ! array_key_exists( $zp_item[0], $zp_request_queue ) )
+				$zp_request_queue[$zp_item[0]]["items"] = "";
+
+			// Add item if not in queue
+			if ( strpos( $zp_request_queue[$zp_item[0]]["items"], $zp_item[1] ) === false )
 			{
-				$zp_item = explode( ":", substr( $zp_item_data, 1, -1 ) );
+				$temp_item_key = $zp_item[1];
 
-				// Create items queue for API User ID, if it doesn't exist
-				if ( ! array_key_exists( $zp_item[0], $zp_request_queue ) )
-					$zp_request_queue[$zp_item[0]]["items"] = "";
+				if ( strlen( $zp_request_queue[$zp_item[0]]["items"] ) != 0 )
+					$temp_item_key = ",".$temp_item_key;
 
-				// Add item if not in queue
-				if ( strpos( $zp_request_queue[$zp_item[0]]["items"], $zp_item[1] ) === false )
-				{
-					$temp_item_key = $zp_item[1];
-
-					if ( strlen( $zp_request_queue[$zp_item[0]]["items"] ) != 0 )
-						$temp_item_key = ",".$temp_item_key;
-
-					$zp_request_queue[$zp_item[0]]["items"] .= $temp_item_key;
-				}
+				$zp_request_queue[$zp_item[0]]["items"] .= $temp_item_key;
 			}
 		}
 	}
 
 
 	// BUILD REQUEST URL FOR EVERY REQUEST
-	if ( count($zp_request_queue) > 0 )
+	if ( $zp_request_queue !== [] )
 	{
 		// REVIEW: Does setting $zp_request_queue here overwrite it for each account?
 		foreach ( $zp_request_queue as $api_user_id => $zp_request_data )
-		{
 			$zp_request_queue = Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id, $zp_request_data );
-		}
 	}
 	else
 	{
@@ -231,12 +228,10 @@ function Zotpress_shortcode_request( $checkcache = false )
 						$zp_imported = $zp_import_contents->get_request_contents( $zp_request_url, $zpr["update"] );
 					}
 
-
 					// Stop and let JS Ajax take over
 					if ( $checkcache
 							&& ! $zp_usecache )
 						continue;
-
 
 					// Deal with possible errors
 					if ( gettype($zp_imported) == "string"
@@ -247,13 +242,16 @@ function Zotpress_shortcode_request( $checkcache = false )
 					}
 
 					// Create all-requests json if doesn't exists
-					if ( empty($zp_request) ) $zp_request = $zp_imported;
+					if ( empty($zp_request) )
+						$zp_request = $zp_imported;
 
 					// Add to existing all-requests json
 					$zp_request["json"] = rtrim($zp_request["json"], "]") . "," . $zp_imported["json"] . "]";
 				}
 			}
-			else // Just one request
+
+			// Just one request
+			else
 			{
 				// First, check the cache with PHP
 				if ( $checkcache )
@@ -288,12 +286,12 @@ function Zotpress_shortcode_request( $checkcache = false )
 				if ( gettype($zp_imported) == "string"
 				 		&& substr($zp_imported, 0, 5) == "Error" )
 				{
-					$zp_error = substr($zp_imported, 7, -1);
+        			$zp_error = substr($zp_imported, 7, -1);
 				}
 
+				// Create all-requests json if doesn't exists
 				else
 				{
-					// Create all-requests json if doesn't exists
 					if ( empty($zp_request) )
 					{
 						$zp_request = $zp_imported;
@@ -304,8 +302,16 @@ function Zotpress_shortcode_request( $checkcache = false )
 						$zp_request["json"] = rtrim($zp_request["json"], "]") . "," . ltrim($zp_imported["json"], "[") . "]";
 					}
 				}
-			}
-		} // Request the data
+				if ( $zp_request["json"] == "Not found" )
+					$zp_error = $zp_request["json"];
+    			// } elseif ( empty($zp_request) ) {
+			    //     $zp_request = $zp_imported;
+			    // } else // Add to existing all-requests json
+				// {
+				// 	$zp_request["json"] = rtrim($zp_request["json"], "]") . "," . ltrim($zp_imported["json"], "[") . "]";
+				// }
+			} // Just one request
+		} // Request the data (foreach)
 	} // If no error
 
 	// Fix formatting quirk
@@ -313,22 +319,34 @@ function Zotpress_shortcode_request( $checkcache = false )
 			|| ( $checkcache && $zp_usecache && ! $zp_error ) )
 		$zp_request["json"] = str_replace("}}]]", "}}]", $zp_request["json"]);
 
-	if ( ( ! $checkcache && ( ! $zp_error || $zp_request["json"] != "0" ) )
-	 		|| ( $checkcache && $zp_usecache && ( ! $zp_error || $zp_request["json"] != "0" ) ) )
+	if ( ( ! $checkcache && ( ! $zp_error && $zp_request["json"] != "0" ) )
+	 		|| ( $checkcache && $zp_usecache && ( ! $zp_error && $zp_request["json"] != "0" ) ) )
 	{
 		// Decode the JSONs
+		// Thanks to Adnreea Onica @ StackOverflow
 		$temp_headers = json_decode( $zp_request["headers"] );
+		// $temp_headers = json_encode( (array)$zp_request["headers"] );
+		// $temp_headers = json_decode( str_replace('\u0000*\u0000','', $temp_headers) );
+
+		// $temp_data = json_encode( (array)$zp_request["json"] );
+		// $temp_data = json_decode( str_replace('\u0000*\u0000','', $temp_data) );
 		$temp_data = json_decode( $zp_request["json"] );
 
 		// Figure out if there's multiple requests and how many
+		// if ( $zpr["request_start"] == 0
+		// 		&& ( property_exists($temp_headers, 'link')
+		// 				&& $temp_headers->link !== null )
+		// 		&& strpos( $temp_headers->link, 'rel="last"' ) !== false )
+
 		if ( $zpr["request_start"] == 0
-				&& isset($temp_headers->link) && strpos( $temp_headers->link, 'rel="last"' ) !== false )
+				&& isset( $temp_headers->link )
+				&& strpos( $temp_headers->link, 'rel="last"' ) !== false )
 		{
 			$temp_link = explode( ";", $temp_headers->link );
 			$temp_link = explode( "start=", $temp_link[1] );
 			$temp_link = explode( "&", $temp_link[1] );
 
-			$zp_request_meta["request_last"] = $temp_link[0];
+			$zp_request_meta["request_last"] = (int) $temp_link[0];
 		}
 
 		// Figure out the next starting position for the next request, if any
@@ -336,7 +354,8 @@ function Zotpress_shortcode_request( $checkcache = false )
 			$zp_request_meta["request_next"] = $zpr["request_start"] + $zpr["limit"] ;
 
 		// Overwrite request if tag limit
-		if ( $zpr["overwrite_request"] === true )
+		if ( $zpr["item_type"] == "items"
+				&& $zpr["overwrite_request"] === true )
 		{
 			$zp_request_meta["request_next"] = 0;
 			$zp_request_meta["request_last"] = 0;
@@ -348,13 +367,12 @@ function Zotpress_shortcode_request( $checkcache = false )
 			// Make sure it's less than the total available items
 			if ( isset( $temp_headers->{"total-results"} )
 					&& $temp_headers->{"total-results"} < $zpr["overwrite_last_request"] )
-				$zpr["overwrite_last_request"] = intval( ceil( intval($temp_headers->{"total-results"}) / $zpr["limit"] ) - 1 ) * $zpr["limit"];
+				$zpr["overwrite_last_request"] = (int) (ceil( (int) $temp_headers->{"total-results"} / $zpr["limit"] ) - 1) * $zpr["limit"];
 			else
-				$zpr["overwrite_last_request"] = intval( ceil( $zpr["overwrite_last_request"] / $zpr["limit"] ) ) * $zpr["limit"];
+				$zpr["overwrite_last_request"] = (int) ceil( $zpr["overwrite_last_request"] / $zpr["limit"] ) * $zpr["limit"];
 
 			$zp_request_meta["request_last"] = $zpr["overwrite_last_request"];
 		}
-
 
 
 		/**
@@ -380,7 +398,9 @@ function Zotpress_shortcode_request( $checkcache = false )
 			foreach ( $temp_data as $item )
 			{
 				// Set target for links
-				$zp_target_output = ""; if ( $zpr["target"] ) $zp_target_output = "target='_blank' ";
+				$zp_target_output = "";
+				if ( $zpr["target"] )
+					$zp_target_output = "target='_blank' ";
 
 				// Author filtering: skip non-matching authors
 				// TODO: Breaking with multi name
@@ -400,7 +420,9 @@ function Zotpress_shortcode_request( $checkcache = false )
 							if ( zp_check_author_continue( $item, $author ) === true )
 								$zp_authors_check = true;
 					}
-					else // single or inclusive
+
+					// Single author or inclusive
+					else
 					{
 						if ( $zpr["inclusive"] === false )
 						{
@@ -410,7 +432,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 								if ( zp_check_author_continue( $item, $author ) === true )
 									$author_exists_count++;
 
-							if ( $author_exists_count == count($zpr["author"])+1 )
+							if ( $author_exists_count === count($zpr["author"]) +1 )
 								$zp_authors_check = true;
 						}
 						else // inclusive and single
@@ -418,55 +440,74 @@ function Zotpress_shortcode_request( $checkcache = false )
 							if ( zp_check_author_continue( $item, $zpr["author"] ) === true )
 								$zp_authors_check = true;
 						}
+
+						// } elseif (zp_check_author_continue( $item, $zpr["author"] ) === true) {
+						// 	$zp_authors_check = true;
+						// }
 					}
 
-					if ( $zp_authors_check === false ) continue;
+					if ( $zp_authors_check === false )
+						continue;
 				} // author
 
 				// Year filtering: skip non-matching years
-				if ( $zpr["year"] && isset($item->meta->parsedDate) )
+				if ( $zpr["year"]
+						&& isset($item->meta->parsedDate) )
 				{
-					if ( strpos($zpr["year"], ",") !== false ) // multiple
+					// multiple
+					if (strpos($zpr["year"], ",") !== false)
 					{
-						$zp_years_check = false;
-						$zp_years = explode( ",", $zpr["year"] );
+				        $zp_years_check = false;
+				        $zp_years = explode( ",", $zpr["year"] );
 
-						foreach ( $zp_years as $year )
-							if ( zp_get_year( $item->meta->parsedDate ) == $year ) $zp_years_check = true;
+				        foreach ( $zp_years as $year )
+						 	if ( zp_get_year( $item->meta->parsedDate ) == $year )
+								$zp_years_check = true;
 
-						if ( ! $zp_years_check ) continue;
+				        if ( ! $zp_years_check ) continue;
 					}
 					else // single
 					{
-						if ( zp_get_year( $item->meta->parsedDate ) != $zpr["year"] ) continue;
+						if ( zp_get_year( $item->meta->parsedDate ) != $zpr["year"] )
+							continue;
 					}
+				     // } elseif (zp_get_year( $item->meta->parsedDate ) != $zpr["year"]) {
+				     //     continue;
+				     // }
 				}
 
 				// Skip non-matching years for author-year pairs
-				if ( $zpr["year"] && $zpr["author"] && isset($item->meta->parsedDate) )
-					if ( zp_get_year( $item->meta->parsedDate ) != $zpr["year"] ) continue;
+				// if ( $zpr["year"] && $zpr["author"] && (property_exists($item->meta, 'parsedDate') && $item->meta->parsedDate !== null) && zp_get_year( $item->meta->parsedDate ) != $zpr["year"] )
+				if ( $zpr["year"]
+						&& $zpr["author"]
+						&& isset($item->meta->parsedDate) )
+					continue;
 
 				// Add item key for show image
 				if ( $zpr["showimage"] ) $zp_showimage_keys .= " ".$item->key;
 
 				// Modify style based on language
 				// Languages: jp
-				if ( isset( $item->data->language ) && $item->data->language != "" )
+				if ( isset($item->data->language)
+						// && $item->data->language !== null
+						// && $item->data->language != ""
+						&& $item->data->language == "ja" )
 				{
-					if ( $item->data->language == "ja" )
-					{
-						// Change ", and " to comma
-						$item->bib = str_ireplace(", and ", ", ", $item->bib);
+					// Change ", and " to comma
+					$item->bib = str_ireplace(", and ", ", ", $item->bib);
 
-						// Remove "In "
-						$item->bib = str_ireplace("In ", "", $item->bib);
-					}
+					// Remove "In "
+					$item->bib = str_ireplace("In ", "", $item->bib);
 				}
 
 				// Hyperlink or URL Wrap
-				if ( isset( $item->data->url ) && strlen($item->data->url) > 0 )
+				if ( isset($item->data->url)
+					// && $item->data->url !== null
+					&& strlen($item->data->url) > 0 )
 				{
-					if ( $zpr["urlwrap"] && $zpr["urlwrap"] == "title" && $item->data->title )
+					if ( $zpr["urlwrap"]
+						&& $zpr["urlwrap"] == "title"
+						&& $item->data->title )
 					{
 						// First: Get rid of text URL if it appears as text in the citation:
 						// REVIEW: Does this account for all citation styles?
@@ -565,41 +606,43 @@ function Zotpress_shortcode_request( $checkcache = false )
 								$item->bib
 							);
 					}
-				}
+				} // Hyperlink or URL wrap
 
 				// Hyperlink DOIs
-				if ( isset( $item->data->DOI ) && strlen($item->data->DOI) > 0 )
+				if ( isset($item->data->DOI)
+						// && $item->data->DOI !== null
+						&& strlen($item->data->DOI) > 0 )
 				{
 					// Styles without http
 					if ( strpos( $item->bib, "doi:" ) !== false
                             && strpos( $item->bib, "doi.org" ) == false )
 					{
-						$item->bib = str_ireplace(
-								"doi:" . $item->data->DOI,
-								"<a class='zp-doi-link' ".$zp_target_output."href='http://doi.org/".$item->data->DOI."'>".$item->data->DOI."</a>",
-								$item->bib
-							);
-					}
+         				$item->bib = str_ireplace(
+   								"doi:" . $item->data->DOI,
+   								"<a ".$zp_target_output."href='http://doi.org/".$item->data->DOI."'>http://doi.org/".$item->data->DOI."</a>",
+   								$item->bib
+   							);
+     				}
 					// Styles with http
-					else if ( strpos( $item->bib, "http://doi.org/" ) !== false
+					elseif ( strpos( $item->bib, "http://doi.org/" ) !== false
                             && strpos( $item->bib, "</a>" ) == false )
 					{
-						$item->bib = str_ireplace(
-								"http://doi.org/" . $item->data->DOI,
-								"doi: <a class='zp-doi-link' ".$zp_target_output."href='http://doi.org/".$item->data->DOI."'>".$item->data->DOI."</a>",
-								$item->bib
-							);
+         				$item->bib = str_ireplace(
+   								"http://doi.org/" . $item->data->DOI,
+   								"<a ".$zp_target_output."href='http://doi.org/".$item->data->DOI."'>http://doi.org/".$item->data->DOI."</a>",
+   								$item->bib
+   							);
 					}
 					// HTTPS format
-					else if ( strpos( $item->bib, "https://doi.org/" ) !== false
-                            && strpos( $item->bib, "</a>" ) == false)
+     				elseif ( strpos( $item->bib, "https://doi.org/" ) !== false
+                            && strpos( $item->bib, "</a>" ) == false )
 					{
-						$item->bib = str_ireplace(
-								"https://doi.org/" . $item->data->DOI,
-								"doi: <a class='zp-doi-link' ".$zp_target_output."href='https://doi.org/".$item->data->DOI."'>".$item->data->DOI."</a>",
-								$item->bib
-							);
-					}
+         				$item->bib = str_ireplace(
+   								"https://doi.org/" . $item->data->DOI,
+   								"<a ".$zp_target_output."href='https://doi.org/".$item->data->DOI."'>https://doi.org/".$item->data->DOI."</a>",
+   								$item->bib
+   							);
+ 					}
 				}
 
 				// Cite link (RIS)
@@ -608,15 +651,12 @@ function Zotpress_shortcode_request( $checkcache = false )
 
 				// Highlight text
 				if ( $zpr["highlight"] )
-				{
 					$item->bib = str_ireplace( $zpr["highlight"], "<strong>".$zpr["highlight"]."</strong>", $item->bib );
-				}
 
 				// Downloads, notes
 				if ( $zpr["downloadable"]
 						|| $zpr["shownotes"] )
 				{
-
 					// Check if item has children that could be downloads
 					if ( $item->meta->numChildren > 0 )
 					{
@@ -625,7 +665,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 
 						$zp_child_url = "https://api.zotero.org/".$zp_account[0]->account_type."/".$zpr["api_user_id"]."/items";
 						$zp_child_url .= "/".$item->key."/children?";
-						if (is_null($zp_account[0]->public_key) === false && trim($zp_account[0]->public_key) != "")
+						if (!is_null($zp_account[0]->public_key) && trim($zp_account[0]->public_key) != "")
 							$zp_child_url .= "key=".$zp_account[0]->public_key."&";
 						$zp_child_url .= "&format=json&include=data";
 
@@ -650,43 +690,42 @@ function Zotpress_shortcode_request( $checkcache = false )
 									if ( isset($zp_child->data->linkMode)
 	                                    && ( ( $zp_child->data->linkMode == "imported_file"
 	                                			|| $zp_child->data->linkMode == "imported_url" )
-	                            			&& preg_match('(pdf|doc|docx|ppt|pptx|latex|rtf|odt|odp)', $zp_child->data->filename) === 1 )
-	                                )
+	                            			&& preg_match('(pdf|doc|docx|ppt|pptx|latex|rtf|odt|odp)', $zp_child->data->filename) === 1 ) )
 									{
-										$zp_download_meta = array (
-												"dlkey" => $zp_child->key,
-												"contentType" => $zp_child->data->contentType
-											);
+             							$zp_download_meta = array (
+   												"dlkey" => $zp_child->key,
+   												"contentType" => $zp_child->data->contentType
+   											);
 
-										// Display download link if file exists
-										if ( $zp_download_meta )
-											$item->bib = preg_replace('~(.*)' . preg_quote( '</div>', '~') . '(.*?)~', '$1' . " <a title='Download' class='zp-DownloadURL' href='".ZOTPRESS_PLUGIN_URL."lib/request/request.dl.php?api_user_id=".$zpr["api_user_id"]."&amp;dlkey=".$zp_download_meta["dlkey"]."&amp;content_type=".$zp_download_meta["contentType"]."'>PDF</a></div>" . '$2', $item->bib, 1 );
-									}
+							            // Display download link if file exists
+							            if ( $zp_download_meta !== [] )
+   											$item->bib = preg_replace('~(.*)' . preg_quote( '</div>', '~') . '(.*?)~', '$1' . " <a title='Download' class='zp-DownloadURL' href='".ZOTPRESS_PLUGIN_URL."lib/request/request.dl.php?api_user_id=".$zpr["api_user_id"]."&amp;dlkey=".$zp_download_meta["dlkey"]."&amp;content_type=".$zp_download_meta["contentType"]."'>Download</a></div>" . '$2', $item->bib, 1 );
+     								}
 
 									// Check for link to downloadable file (third-party)
 									else if ( isset($zp_child->data->linkMode)
 										&& ( $zp_child->data->linkMode == "linked_url"
-												&& preg_match('(pdf|doc|docx|ppt|pptx|latex|rtf|odt|odp)', $zp_child->data->url) === 1 )
-									)
+												&& preg_match('(pdf|doc|docx|ppt|pptx|latex|rtf|odt|odp)', $zp_child->data->url) === 1 ) )
 									{
-										$item->bib = preg_replace('~(.*)' . preg_quote( '</div>', '~') . '(.*?)~', '$1' . " <a title='Download' class='zp-DownloadURL' href='".$zp_child->data->url."'>PDF</a></div>" . '$2', $item->bib, 1 );
-									}
+							             $item->bib = preg_replace('~(.*)' . preg_quote( '</div>', '~') . '(.*?)~', '$1' . " <a title='Download' class='zp-DownloadURL' href='".$zp_child->data->url."'>Download</a></div>" . '$2', $item->bib, 1 );
+							        }
 								}
 
 								// Check for notes
-								if ( $zpr["shownotes"] )
+								if ( $zpr["shownotes"]
+										&& ( isset($zp_child->data->itemType)
+												&& $zp_child->data->itemType == "note" ) )
 								{
-									if ( isset($zp_child->data->itemType) && $zp_child->data->itemType == "note" )
-										$zp_notes_meta[count($zp_notes_meta)] = $zp_child->data->note;
+									$zp_notes_meta[count($zp_notes_meta)] = $zp_child->data->note;
 								}
 							}
 
 							// // Display download link if file exists
 							// if ( $zp_download_meta )
-							// 	$item->bib = preg_replace('~(.*)' . preg_quote( '</div>', '~') . '(.*?)~', '$1' . " <a title='Download' class='zp-DownloadURL' href='".ZOTPRESS_PLUGIN_URL."lib/request/request.dl.php?api_user_id=".$zpr["api_user_id"]."&amp;dlkey=".$zp_download_meta["dlkey"]."&amp;content_type=".$zp_download_meta["contentType"]."'>PDF</a></div>" . '$2', $item->bib, 1 );
+							// 	$item->bib = preg_replace('~(.*)' . preg_quote( '</div>', '~') . '(.*?)~', '$1' . " <a title='Download' class='zp-DownloadURL' href='".ZOTPRESS_PLUGIN_URL."lib/request/request.dl.php?api_user_id=".$zpr["api_user_id"]."&amp;dlkey=".$zp_download_meta["dlkey"]."&amp;content_type=".$zp_download_meta["contentType"]."'>Download</a></div>" . '$2', $item->bib, 1 );
 
 							// Display notes, if any
-							if ( count($zp_notes_meta) > 0 )
+							if ( $zp_notes_meta !== [] )
 							{
 								$temp_notes = "<li id=\"zp-Note-".$item->key."\">\n";
 
@@ -716,10 +755,9 @@ function Zotpress_shortcode_request( $checkcache = false )
 					} // Check if item has children
 				} // $zpr["downloadable"]
 
-				array_push( $zp_all_the_data, $item);
+				$zp_all_the_data[] = $item;
 
 			} // foreach item
-
 
 			// Show tags
 			if ( $zpr["showtags"] )
@@ -824,7 +862,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 				{
 					foreach ( $zp_all_the_data as $temp_data )
 					{
-						if ( $temp_data->key == $temp_key ) array_push( $temp_arr, $temp_data );
+						if ( $temp_data->key == $temp_key ) $temp_arr[] = $temp_data;
 					}
 				}
 
@@ -835,16 +873,14 @@ function Zotpress_shortcode_request( $checkcache = false )
 
 	else // No results
 	{
-		$zp_all_the_data = ""; // Necessary?
+		// $zp_all_the_data = ""; // Necessary?
 	}
-
 
 	/**
 	*
 	*	 Finish and output the data:
 	*
 	*/
-
 	unset($zp_import_contents);
 	unset($zp_import_url);
 	unset($zp_xml);
@@ -882,6 +918,9 @@ function Zotpress_shortcode_request( $checkcache = false )
 
 				foreach ( $zp_all_the_data as $zp_citation )
 				{
+					// QUESTION: Why is it a string?
+					// $zp_citation = json_decode($zp_citation);
+
 					$zp_output .= '<div id="zp-ID-'.get_the_ID().'-'.$zp_citation->library->id.'-'.$zp_citation->key.'"';
 					$zp_output .= ' class="zp-Entry zpSearchResultsItem">';
 					$zp_output .= $zp_citation->bib;

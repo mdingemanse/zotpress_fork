@@ -14,10 +14,10 @@ if ( current_user_can('edit_others_posts') )
 
 				<h3><?php _e('Options','zotpress'); ?></h3>
 
-				<?php include('admin.options.form.php'); ?>
+				<?php include(__DIR__ . '/admin.options.form.php'); ?>
 
 
-				<hr />
+				<hr>
 
 
 				<!-- START OF CPT -->

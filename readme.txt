@@ -7,8 +7,8 @@ Tags: zotero, zotpress, citation manager, citations, citation, cite, citing, bib
 Author URI: http://katieseaborn.com/
 Author: Katie Seaborn
 Requires at least: 3.5
-Tested up to: 5.9.3
-Stable tag: 7.3.1.2
+Tested up to: 6.1.1
+Stable tag: 7.3.2
 License: Apache2.0
 
 Zotpress displays your Zotero citations on WordPress.
@@ -26,7 +26,7 @@ Zotpress displays your Zotero citations on WordPress.
 
 Compatible with Firefox, Safari, Chrome, and IE9. Made with jQuery, jQuery UI, jQuery doTimeout, Live Query, OAuth, and [Open Library](https://openlibrary.org/ "Open Library").
 
-Special thanks to Joe Alberts for substantial contributions to the code, comprehensive testing, and design ideation. Thanks also to contributors Christopher Cheung, Jason S., Chris Wentzloff, and Karljürgen Feuerherm for their code contributions and guidance. Finally, my sincere gratitude goes out to all who have donated in support of this plugin.
+Special thanks to Joe Alberts for substantial contributions to the code, comprehensive testing, and design ideation. Thanks also to contributors Christopher Cheung, Jason S., Chris Wentzloff, and Karljürgen Feuerherm (@feuerherm) for their code contributions and guidance. Finally, my sincere gratitude goes out to all who have donated in support of this plugin.
 
 Please note that this plugin is on semi-hiatus, with updates expected about 1-3 times a year.
 
@@ -71,6 +71,10 @@ The F.A.Q. can be found on the "Help" page of every Zotpress installation. If yo
 6. Allow visitors to search your library by item metadata or tag, or both.
 
 == Changelog ==
+
+= 7.3.2 =
+
+* Added support for PHP 8 (tested in PHP 8.0.8), with thanks to K.G. Feuerherm (@kfeuerherm) and @codeispoetry.
 
 = 7.3.1.2 =
 
@@ -849,6 +853,10 @@ The F.A.Q. can be found on the "Help" page of every Zotpress installation. If yo
 * Zotpress makes its debut.
 
 == Upgrade Notice ==
+
+= 7.3.2 =
+
+Updated to work with PHP 8.
 
 = 6.2.4 =
 

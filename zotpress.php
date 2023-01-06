@@ -6,7 +6,7 @@
     Plugin URI: http://katieseaborn.com/plugins
     Description: Bringing Zotero and scholarly blogging to your WordPress website.
     Author: Katie Seaborn
-    Version: 7.3.1.2
+    Version: 7.3.2
     Author URI: http://katieseaborn.com
     Text Domain: zotpress
     Domain Path: /languages/
@@ -15,7 +15,7 @@
 
 /*
 
-    Copyright 2022 Katie Seaborn
+    Copyright 2023 Katie Seaborn
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@
     define('ZOTPRESS_PLUGIN_FILE',  __FILE__ );
     define('ZOTPRESS_PLUGIN_URL', plugin_dir_url( ZOTPRESS_PLUGIN_FILE ));
     define('ZOTPRESS_PLUGIN_DIR', dirname( __FILE__ ));
-    define('ZOTPRESS_VERSION', '7.3.1.2' );
+    define('ZOTPRESS_VERSION', '7.3.2' );
     define('ZOTPRESS_LIVEMODE', true ); // NOTE: Remember to set to TRUE
 
     $GLOBALS['zp_is_shortcode_displayed'] = false;
@@ -153,7 +153,7 @@
 			wp_enqueue_media();
 			wp_enqueue_script( 'jquery.dotimeout.min.js', ZOTPRESS_PLUGIN_URL . 'js/jquery.dotimeout.min.js', array( 'jquery' ) );
 
-			if ( in_array( $hook, array('post.php', 'post-new.php') ) !== true )
+			if ( !in_array( $hook, array('post.php', 'post-new.php') ) )
 			{
 				wp_enqueue_script( 'jquery.livequery.min.js', ZOTPRESS_PLUGIN_URL . 'js/jquery.livequery.min.js', array( 'jquery' ) );
 			}
@@ -178,7 +178,7 @@
         // Turn on/off minified versions if testing/live
         $minify = ''; if ( ZOTPRESS_LIVEMODE ) $minify = '.min';
 
-		if ( strpos( strtolower($hook), "zotpress" ) !== false )
+		if ( stripos( $hook, "zotpress" ) !== false )
 		{
 			wp_enqueue_script( 'zotpress.admin'.$minify.'.js', plugin_dir_url( __FILE__ ) . 'js/zotpress.admin'.$minify.'.js', array( 'jquery','media-upload','thickbox' ) );
 			wp_localize_script(
@@ -263,7 +263,7 @@
     /**
     * Change HTTP request timeout
     */
-    function Zotpress_change_timeout($time) { return 60; /* second */ }
+    function Zotpress_change_timeout($time): int { return 60; /* second */ }
     add_filter('http_request_timeout', 'Zotpress_change_timeout');
 
 

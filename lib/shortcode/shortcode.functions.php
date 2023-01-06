@@ -32,9 +32,8 @@ function zp_clean_param( $param )
 
 	// Fix the String
 	$clean_param = htmlspecialchars( $param, ENT_QUOTES );
-	$clean_param = str_replace( $search, "", $clean_param );
 
-	return $clean_param;
+	return str_replace( $search, "", $clean_param );
 }
 
 
@@ -55,10 +54,7 @@ function zp_get_year( $date, $yesnd=false )
 	preg_match_all( '/(\d{4})/', $date, $matches );
 
 	if (is_null($matches[0][0]))
-		if ( $yesnd === true )
-			$date_return = "n.d.";
-		else
-			$date_return = "";
+		$date_return = $yesnd === true ? "n.d." : "";
 	else
 		$date_return = $matches[0][0];
 
@@ -80,35 +76,34 @@ function zp_get_year( $date, $yesnd=false )
 function subval_sort( $item_arr, $sortby, $order )
 {
 	// Format sort order
-	if ( strtolower($order) == "desc" ) $order = SORT_DESC; else $order = SORT_ASC;
+	$order = strtolower($order) == "desc" ? SORT_DESC : SORT_ASC;
 
 	// Author or date
-	if ( $sortby == "author" || $sortby == "date" )
-	{
-		foreach ($item_arr as $key => $val)
-		{
-			$author[$key] = $val["author"];
+	if ($sortby == "author" || $sortby == "date") {
+     foreach ($item_arr as $key => $val)
+   		{
+   			$author[$key] = $val["author"];
 
-			$zpdate = ""; if ( isset( $val["zpdate"] ) ) $zpdate = $val["zpdate"]; else $zpdate = $val["date"];
+   			$zpdate = ""; $zpdate = isset( $val["zpdate"] ) ? $val["zpdate"] : $val["date"];
 
-			$date[$key] = zp_date_format($zpdate);
-		}
-	}
-
-	// Title
-	else if ( $sortby == "title" )
-	{
-		foreach ($item_arr as $key => $val)
-		{
-			$title[$key] = $val["title"];
-			$author[$key] = $val["author"];
-		}
-	}
+   			$date[$key] = zp_date_format($zpdate);
+   		}
+ } elseif ($sortby == "title") {
+     foreach ($item_arr as $key => $val)
+   		{
+   			$title[$key] = $val["title"];
+   			$author[$key] = $val["author"];
+   		}
+ }
 
 	// NOTE: array_multisort seems to be ignoring second sort for date->author
-	if ( $sortby == "author" && isset($author) && is_array($author) ) array_multisort( $author, $order, $date, $order, $item_arr );
-	else if ( $sortby == "date" && isset($date) && is_array($date) ) array_multisort( $date, $order, $author, SORT_ASC, $item_arr );
-	else if ( $sortby == "title" && isset($title) && is_array($title) ) array_multisort( $title, $order, $author, $order, $item_arr );
+	if ($sortby == "author" && isset($author) && is_array($author)) {
+     array_multisort( $author, $order, $date, $order, $item_arr );
+ } elseif ($sortby == "date" && isset($date) && is_array($date)) {
+     array_multisort( $date, $order, $author, SORT_ASC, $item_arr );
+ } elseif ($sortby == "title" && isset($title) && is_array($title)) {
+     array_multisort( $title, $order, $author, $order, $item_arr );
+ }
 
 	return $item_arr;
 }
@@ -138,7 +133,7 @@ function zp_date_format ($date)
 
 
 	// Check if it's a mm-mm dash
-	if ( preg_match("/^[a-zA-Z]+[-][a-zA-Z]+[ ][0-9]+$/", $date ) == 1)
+	if ( preg_match("/^[a-zA-Z]+[-][a-zA-Z]+[ ]\\d+\$/", $date ) == 1)
 	{
 		$temp1 = preg_split( "/-|\//", $date );
 		$temp2 = preg_split( "[\s]", $temp1[1] );
@@ -147,122 +142,99 @@ function zp_date_format ($date)
 	}
 
 	// If it's already formatted with a dash or forward slash
-	if ( strpos( $date, "-" ) !== false || strpos( $date, "/" ) !== false )
-	{
-		// Break it up
-		$temp = preg_split( "/-|\//", $date );
-
-		// If year is last, switch it with first
-		if ( strlen( $temp[0] ) != 4 )
-		{
-			// Just month and year
-			if ( count( $temp ) == 2 )
-				$date_formatted = array(
-					"year" => $temp[1],
-					"month" => $temp[0],
-					"day" => false
-				);
-			// Assuming mm dd yyyy
-			else
-				$date_formatted = array(
-					"year" => $temp[2],
-					"month" => $temp[0],
-					"day" => $temp[1]
-				);
-		}
-		else // Year is first
-		{
-			if ( isset($temp[2]) ) // day is set
-			{
-				$date_formatted = array(
-					"year" => $temp[0],
-					"month" => $temp[1],
-					"day" => $temp[2]
-				);
-			}
-			else
-			{
-				$date_formatted = array(
-					"year" => $temp[0],
-					"month" => $temp[1],
-					"day" => false
-				);
-			}
-		}
-	}
-
-	// If it's already formatted in mmmm dd, yyyy form
-	else if ( strpos( $date, "," ) )
-	{
-		$date = trim( str_replace( ", ", ",", $date ) );
-		$temp = preg_split( "/,| /", $date );
-
-		// Convert month
-		$month = array_search( $temp[0], $list_month_long );
-		if ( !$month ) $month = array_search( $temp[0], $list_month_short );
-
-		$date_formatted = array(
-			"year" => $temp[2],
-			"month" => $month,
-			"day" => $temp[1]
-		);
-	}
-	// Check for full names
-	else
+	if (strpos( $date, "-" ) !== false || strpos( $date, "/" ) !== false) {
+     // Break it up
+     $temp = preg_split( "/-|\//", $date );
+     // If year is last, switch it with first
+     if (strlen( $temp[0] ) != 4) {
+         // Just month and year
+         if ( count( $temp ) == 2 )
+      				$date_formatted = array(
+      					"year" => $temp[1],
+      					"month" => $temp[0],
+      					"day" => false
+      				);
+      			// Assuming mm dd yyyy
+      			else
+      				$date_formatted = array(
+      					"year" => $temp[2],
+      					"month" => $temp[0],
+      					"day" => $temp[1]
+      				);
+     } elseif (isset($temp[2])) {
+         // day is set
+         $date_formatted = array(
+     					"year" => $temp[0],
+     					"month" => $temp[1],
+     					"day" => $temp[2]
+     				);
+     } else
+  			{
+  				$date_formatted = array(
+  					"year" => $temp[0],
+  					"month" => $temp[1],
+  					"day" => false
+  				);
+  			}
+ } elseif (strpos( $date, "," )) {
+     $date = trim( str_replace( ", ", ",", $date ) );
+     $temp = preg_split( "/,| /", $date );
+     // Convert month
+     $month = array_search( $temp[0], $list_month_long );
+     if ( !$month ) $month = array_search( $temp[0], $list_month_short );
+     $date_formatted = array(
+   			"year" => $temp[2],
+   			"month" => $month,
+   			"day" => $temp[1]
+   		);
+ } else
 	{
 		$date = trim( str_replace( "  ", "-", $date ) );
 		$temp = explode ( " ", $date );
 
 		// If there's at least two parts to the date
-		if ( count( $temp) > 0 )
+		if ( $temp !== [] )
 		{
 			// Check if name is first
-			if ( !is_numeric( $temp[0] ) )
-			{
-				if ( in_array( $temp[0], $list_month_long ) )
-					$date_formatted = array(
-						"year" => $temp[1],
-						"month" => array_search( $temp[0], $list_month_long ),
-						"day" => false
-					);
-				else if ( in_array( $temp[0], $list_month_short ) )
-					$date_formatted = array(
-						"year" => $temp[1],
-						"month" => array_search( $temp[0], $list_month_short ),
-						"day" => false
-					);
-				else // Not a recognizable month word
-					$date_formatted = array(
-						"year" => $temp[0], // $temp[1]
-						"month" => false,
-						"day" => false
-					);
-			}
-			// Otherwise, check if name is last
-			else
-			{
-				if ( count($temp) > 1 )
-				{
-					if ( in_array( $temp[1], $list_month_long ) )
-						$date_formatted = array(
-							"year" => $temp[0],
-							"month" => array_search( $temp[1], $list_month_long ),
-							"day" => false
-						);
-					else if ( in_array( $temp[1], $list_month_short ) )
-						$date_formatted = array(
-							"year" => $temp[0],
-							"month" => array_search( $temp[1], $list_month_short ),
-							"day" => false
-						);
-					else // Not a recognizable month word
-						$date_formatted = array(
-							"year" => $temp[0],
-							"month" => false,
-							"day" => false
-						);
-				}
-				else // Only one part in the array
+			if (!is_numeric( $temp[0] )) {
+       if (in_array( $temp[0], $list_month_long )) {
+           $date_formatted = array(
+      						"year" => $temp[1],
+      						"month" => array_search( $temp[0], $list_month_long ),
+      						"day" => false
+      					);
+       } elseif (in_array( $temp[0], $list_month_short )) {
+           $date_formatted = array(
+      						"year" => $temp[1],
+      						"month" => array_search( $temp[0], $list_month_short ),
+      						"day" => false
+      					);
+       } else // Not a recognizable month word
+   					$date_formatted = array(
+   						"year" => $temp[0], // $temp[1]
+   						"month" => false,
+   						"day" => false
+   					);
+   } elseif (count($temp) > 1) {
+       if (in_array( $temp[1], $list_month_long )) {
+           $date_formatted = array(
+     							"year" => $temp[0],
+     							"month" => array_search( $temp[1], $list_month_long ),
+     							"day" => false
+     						);
+       } elseif (in_array( $temp[1], $list_month_short )) {
+           $date_formatted = array(
+     							"year" => $temp[0],
+     							"month" => array_search( $temp[1], $list_month_short ),
+     							"day" => false
+     						);
+       } else // Not a recognizable month word
+  						$date_formatted = array(
+  							"year" => $temp[0],
+  							"month" => false,
+  							"day" => false
+  						);
+   } else // Only one part in the array
 				{
 					$date_formatted = array(
 						"year" => $temp[0],
@@ -270,7 +242,6 @@ function zp_date_format ($date)
 						"day" => false
 					);
 				}
-			}
 		}
 
 		// Otherwise, assume year
@@ -311,7 +282,7 @@ function Zotpress_prep_ajax_request_vars()
 
 	// Deal with incoming variables
 	$zpr["type"] = "basic"; if ( isset($_GET['type']) && $_GET['type'] != "" ) $zpr["type"] = $_GET['type'];
-	if ( isset( $_GET['api_user_id'] ) ) $zpr["api_user_id"] = $_GET['api_user_id']; else $zpr["api_user_id"] = false;
+	$zpr["api_user_id"] = isset( $_GET['api_user_id'] ) ? $_GET['api_user_id'] : false;
 	$zpr["item_type"] = "items"; if ( isset($_GET['item_type']) && $_GET['item_type'] != "" ) $zpr["item_type"] = $_GET['item_type'];
 	$zpr["get_top"] = false; if ( isset($_GET['get_top']) ) $zpr["get_top"] = true;
 	$zpr["sub"] = false;
@@ -368,16 +339,20 @@ function Zotpress_prep_ajax_request_vars()
 
 	$zpr["year"] = false; if ( isset($_GET['year']) && $_GET['year'] != "false" && $_GET['year'] != "" ) $zpr["year"] = $_GET['year'];
 	$zpr["style"] = zp_Get_Default_Style(); if ( isset($_GET['style']) && $_GET['style'] != "false" && $_GET['style'] != "" && $_GET['style'] != "default" ) $zpr["style"] = $_GET['style'];
-	if ( isset($_GET['limit']) && $_GET['limit'] != 0 )
+
+	// NOTE: With PHP 8, watch for URL params that are strings but need to be ints
+	if ( isset($_GET['limit'])
+			&& (int) $_GET['limit'] != 0 )
 	{
-		$zpr["limit"] = intval($_GET['limit']);
+		$zpr["limit"] = (int) $_GET['limit'];
 		$zpr["overwrite_request"] = true;
 	}
+
 	$zpr["title"] = false; if ( isset($_GET['title']) ) $zpr["title"] = $_GET['title'];
 
 	// Max tags, max results
-	$zpr["maxtags"] = false; if ( isset($_GET['maxtags']) ) $zpr["maxtags"] = intval($_GET['maxtags']);
-	$zpr["maxresults"] = false; if ( isset($_GET['maxresults']) ) $zpr["maxresults"] = intval($_GET['maxresults']);
+	$zpr["maxtags"] = false; if ( isset($_GET['maxtags']) ) $zpr["maxtags"] = (int) $_GET['maxtags'];
+	$zpr["maxresults"] = false; if ( isset($_GET['maxresults']) ) $zpr["maxresults"] = (int) $_GET['maxresults'];
 
 	// Term, filter
 	$zpr["term"] = false; if ( isset($_GET['term']) ) $zpr["term"] = $_GET['term'];
@@ -404,25 +379,18 @@ function Zotpress_prep_ajax_request_vars()
 
 	if ( isset($_GET['sortby']) )
 	{
-		if ( $_GET['sortby'] == "author" )
-		{
-			$zpr["sortby"] = "creator";
-			$zpr["order"] = "asc";
-		}
-		else if ( $_GET['sortby'] == "default" )
-		{
-			$zpr["sortby"] = "default"; // entry order
-		}
-		else if ( $_GET['sortby'] == "year" )
-		{
-			$zpr["sortby"] = "date";
-			$zpr["order"] = "desc";
-		}
-		else if ( $zpr["type"] == "intext" && $_GET['sortby'] == "default" )
-		{
-			$zpr["sortby"] = "default";
-		}
-		else
+		if ($_GET['sortby'] == "author") {
+      $zpr["sortby"] = "creator";
+      $zpr["order"] = "asc";
+  } elseif ($_GET['sortby'] == "default") {
+      $zpr["sortby"] = "default";
+      // entry order
+  } elseif ($_GET['sortby'] == "year") {
+      $zpr["sortby"] = "date";
+      $zpr["order"] = "desc";
+  } elseif ($zpr["type"] == "intext" && $_GET['sortby'] == "default") {
+      $zpr["sortby"] = "default";
+  } else
 		{
 			$zpr["sortby"] = $_GET['sortby'];
 		}
@@ -493,8 +461,8 @@ function Zotpress_prep_ajax_request_vars()
 			&& ( $_GET['forcenumber'] == "yes" || $_GET['forcenumber'] == "true" || $_GET['forcenumber'] === true || $_GET['forcenumber'] == 1 ) )
 		$zpr["forcenumber"] = true;
 
-	$zpr["request_start"] = 0; if ( isset($_GET['request_start']) ) $zpr["request_start"] = intval($_GET['request_start']);
-	$zpr["request_last"] = 0; if ( isset($_GET['request_last']) ) $zpr["request_last"] = intval($_GET['request_last']);
+	$zpr["request_start"] = 0; if ( isset($_GET['request_start']) ) $zpr["request_start"] = (int) $_GET['request_start'];
+	$zpr["request_last"] = 0; if ( isset($_GET['request_last']) ) $zpr["request_last"] = (int) $_GET['request_last'];
 
 	return $zpr;
 
@@ -519,23 +487,16 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 	$tempItemType = "";
 
 	// Get account and $api_user_id
-	if ( $api_user_id )
-    {
-		$zp_account = zp_get_account ($wpdb, $api_user_id);
-	}
-	else
-    {
-		if ( $zpr["api_user_id"] )
-        {
-			$zp_account = zp_get_account ($wpdb, $zpr["api_user_id"]);
-			$api_user_id = $zpr["api_user_id"];
-		}
-		else
-        {
+	if ($api_user_id) {
+     $zp_account = zp_get_account ($wpdb, $api_user_id);
+ } elseif ($zpr["api_user_id"]) {
+     $zp_account = zp_get_account ($wpdb, $zpr["api_user_id"]);
+     $api_user_id = $zpr["api_user_id"];
+ } else
+       {
 			$zp_account = zp_get_account ($wpdb);
 			$api_user_id = $zp_account[0]->api_user_id;
 		}
-	}
 
 	// Make sure account was founded (is synced)
 	if ( count($zp_account) > 0 )
@@ -547,37 +508,30 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 	    if ( $zpr['item_type'] == 'items' )
 	    {
 	    	// Account for single item with new style
-	    	if ( gettype( $zpr["item_key"] ) == "string"
+	    	if (gettype( $zpr["item_key"] ) == "string"
 					&& strlen($zpr["item_key"]) > 0
-	    			&& $zpr["item_key"][0] == "{" )
-	        {
-	    		$zpr_temp = explode(':', $zpr["item_key"]);
-	    		if ( count($zpr_temp) > 1 ) $zpr_temp = $zpr_temp[1];
-	    		else $zpr_temp = $zpr_temp[0];
-	    		$zpr["item_key"] = rtrim( $zpr_temp, "}");
-
-				// Account for page numbers
-				if ( strpos( $zpr["item_key"], ',' ) )
-				{
-					$zpr_temp = explode(',', $zpr["item_key"]);
-					$zpr["item_key"] = rtrim( $zpr_temp[0], "}");
-				}
-	    	}
-	    	// Account for single item in array with new style: remove curly brackets
-	    	else if ( gettype( $zpr["item_key"] ) == "array"
+	    			&& $zpr["item_key"][0] == "{") {
+          $zpr_temp = explode(':', $zpr["item_key"]);
+          $zpr_temp = count($zpr_temp) > 1 ? $zpr_temp[1] : $zpr_temp[0];
+          $zpr["item_key"] = rtrim( $zpr_temp, "}");
+          // Account for page numbers
+          if ( strpos( $zpr["item_key"], ',' ) )
+      				{
+      					$zpr_temp = explode(',', $zpr["item_key"]);
+      					$zpr["item_key"] = rtrim( $zpr_temp[0], "}");
+      				}
+      } elseif (gettype( $zpr["item_key"] ) == "array"
 	    			&& count( $zpr["item_key"] ) == 1
-	    			&& $zpr["item_key"][0][0] == "{" )
-			{
-	    		// $zpr["item_key"] = rtrim( explode(':', $zpr["item_key"][0])[1] , "}");
-	    		$zpr["item_key"] = ltrim( rtrim( $zpr["item_key"][0], "}" ), "{" );
-
-				// Account for page numbers
-				if ( strpos( $zpr["item_key"], ',' ) )
-				{
-					$zpr_temp = explode(',', $zpr["item_key"]);
-					$zpr["item_key"] = rtrim( $zpr_temp[0], "}" );
-				}
-	    	}
+	    			&& $zpr["item_key"][0][0] == "{") {
+          // $zpr["item_key"] = rtrim( explode(':', $zpr["item_key"][0])[1] , "}");
+          $zpr["item_key"] = ltrim( rtrim( $zpr["item_key"][0], "}" ), "{" );
+          // Account for page numbers
+          if ( strpos( $zpr["item_key"], ',' ) )
+      				{
+      					$zpr_temp = explode(',', $zpr["item_key"]);
+      					$zpr["item_key"] = rtrim( $zpr_temp[0], "}" );
+      				}
+      }
 	    } // item type Items
 
 		// Top
@@ -589,29 +543,24 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 					|| strpos($zp_request_queue[$api_user_id]["items"], ',') == false )
 			)
 	    {
-			if ( isset( $zp_request_data["items"] ) )
-			{
-				$zp_import_url .= "/" . $zp_request_data["items"];
-			}
-			else if ( gettype( $zpr["item_key"] ) == "array"
+			if (isset( $zp_request_data["items"] )) {
+       $zp_import_url .= "/" . $zp_request_data["items"];
+   } elseif (gettype( $zpr["item_key"] ) == "array"
 					&& count( $zpr["item_key"] ) == 1
-					&& strpos( $zpr["item_key"][0], ',' ) == false )
-			{
-				$zp_import_url .= "/" . $zpr["item_key"][0];
-			}
-			else if ( gettype( $zpr["item_key"] ) == "string"
+					&& strpos( $zpr["item_key"][0], ',' ) == false) {
+       $zp_import_url .= "/" . $zpr["item_key"][0];
+   } elseif (gettype( $zpr["item_key"] ) == "string"
 					&& ( strpos( $zpr["item_key"], "," ) === false
-				 		&& strpos( $zpr["item_key"], ";" ) === false ) )
-			{
-				$zp_import_url .= "/" . $zpr["item_key"];
-			}
+				 		&& strpos( $zpr["item_key"], ";" ) === false )) {
+       $zp_import_url .= "/" . $zpr["item_key"];
+   }
 	    }
 		if ( $zpr["collection_id"] ) $zp_import_url .= "/" . $zpr["collection_id"];
 		if ( $zpr["sub"] ) $zp_import_url .= "/" . $zpr["sub"];
 		$zp_import_url .= "?";
 
 		// Public key, if needed
-		if (is_null($zp_account[0]->public_key) === false && trim($zp_account[0]->public_key) != "")
+		if (!is_null($zp_account[0]->public_key) && trim($zp_account[0]->public_key) != "")
 			$zp_import_url .= "key=".$zp_account[0]->public_key."&";
 
 		// Style
@@ -646,10 +595,10 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 
 	    		foreach ( $items as $item ) {
 	    			if ( count($request_items) < 50 ) {
-	    				array_push( $request_items, $item );
+	    				$request_items[] = $item;
 	    			}
 	    			else {
-	    				array_push( $requests, $request_items );
+	    				$requests[] = $request_items;
 	    				unset( $request_items );
 	    			}
 	    		}
@@ -691,61 +640,51 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 		// For now, we get all and manually filter below
 		$zp_author_or_year_multiple = false;
 
-		if ( $zpr["collection_id"] || $zpr["tag_id"] )
-		{
-			// Check if author or year is set
-			if ( $zpr["year"] || $zpr["author"] )
-			{
-				// Check if author year is set and multiple
-				if ( ( $zpr["author"] && strpos( $zpr["author"], "," ) !== false )
-						|| ( $zpr["year"] && strpos( $zpr["year"], "," ) !== false ) )
-				{
-					if ( $zpr["author"] && strpos( $zpr["author"], "," ) !== false ) $zp_author_or_year_multiple = "author";
-					else $zp_author_or_year_multiple = "year";
-				}
-				else // Set but not multiple
-				{
-					$zp_import_url .= "&qmode=titleCreatorYear";
-					if ( $zpr["author"] ) $zp_import_url .= "&q=".urlencode( $zpr["author"] );
-					if ( $zpr["year"] && ! $zpr["author"] ) $zp_import_url .= "&q=".$zpr["year"];
-				}
-			}
-		}
-		else // no collection or tag
-		{
-			if ( $zpr["year"] || $zpr["author"] )
-			{
-				$zp_import_url .= "&qmode=titleCreatorYear";
+		if ($zpr["collection_id"] || $zpr["tag_id"]) {
+      // Check if author or year is set
+      if ( $zpr["year"] || $zpr["author"] )
+   			{
+   				// Check if author year is set and multiple
+   				if ( ( $zpr["author"] && strpos( $zpr["author"], "," ) !== false )
+   						|| ( $zpr["year"] && strpos( $zpr["year"], "," ) !== false ) )
+   				{
+   					$zp_author_or_year_multiple = $zpr["author"] && strpos( $zpr["author"], "," ) !== false ? "author" : "year";
+   				}
+   				else // Set but not multiple
+   				{
+   					$zp_import_url .= "&qmode=titleCreatorYear";
+   					if ( $zpr["author"] ) $zp_import_url .= "&q=".urlencode( $zpr["author"] );
+   					if ( $zpr["year"] && ! $zpr["author"] ) $zp_import_url .= "&q=".$zpr["year"];
+   				}
+   			}
+  } elseif ($zpr["year"] || $zpr["author"]) {
+      $zp_import_url .= "&qmode=titleCreatorYear";
+      if ( $zpr["author"] )
+  				{
+  					// REVIEW: Deal with authors with multi-part last names
+  					// Replace plus signs with spaces
+  					if ( strpos( $zpr["author"], "+" ) !== -1 )
+  						$zpr["author"] = str_replace( '+', ' ', $zpr["author"] );
 
-				if ( $zpr["author"] )
-				{
-					// REVIEW: Deal with authors with multi-part last names
-					// Replace plus signs with spaces
-					if ( strpos( $zpr["author"], "+" ) !== -1 )
-						$zpr["author"] = str_replace( '+', ' ', $zpr["author"] );
-
-					if ( $zpr["inclusive"] === false )
-					{
-						$zp_authors = explode( ",", $zpr["author"] );
-						$zp_import_url .= "&q=".urlencode( $zp_authors[0] );
-						unset( $zp_authors[0] );
-						$zpr["author"] = $zp_authors;
-					}
-					else // inclusive
-					{
-						$zp_import_url .= "&q=".urlencode( $zpr["author"] );
-					}
-				}
-
-				// CHANGED (7.3): For some reason, urlencode will replace apostrophes
-				// with &#039; and then encode that to %26%23039%3B
-				// which breaks ... so let's replace with %27 manually
-				$zp_import_url = str_replace("%26%23039%3B", "%27", $zp_import_url);
-
-				// Deal with just year, no author
-				if ( $zpr["year"] && ! $zpr["author"] ) $zp_import_url .= "&q=".$zpr["year"];
-			}
-		}
+  					if ( $zpr["inclusive"] === false )
+  					{
+  						$zp_authors = explode( ",", $zpr["author"] );
+  						$zp_import_url .= "&q=".urlencode( $zp_authors[0] );
+  						unset( $zp_authors[0] );
+  						$zpr["author"] = $zp_authors;
+  					}
+  					else // inclusive
+  					{
+  						$zp_import_url .= "&q=".urlencode( $zpr["author"] );
+  					}
+  				}
+      // CHANGED (7.3): For some reason, urlencode will replace apostrophes
+      // with &#039; and then encode that to %26%23039%3B
+      // which breaks ... so let's replace with %27 manually
+      $zp_import_url = str_replace("%26%23039%3B", "%27", $zp_import_url);
+      // Deal with just year, no author
+      if ( $zpr["year"] && ! $zpr["author"] ) $zp_import_url .= "&q=".$zpr["year"];
+  }
 
 		// Avoid attachments and notes, if not using itemtype filtering
 		if ( ! $zpr["itemtype"]
@@ -763,48 +702,33 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 
 		// DEAL WITH MULTIPLE REQUESTS
 		// if ( count($zp_request_queue) > 0 )
-		if ( $zp_request_queue
-				&& array_key_exists($api_user_id, $zp_request_queue) )
-		{
-			// Assume items
-			// if ( array_key_exists("requests", $zp_request_queue[$api_user_id])
-			// 		&& count($zp_request_queue[$api_user_id]["requests"]) > 1 )
-			// Multiple requests
-			if ( array_key_exists("requests", $zp_request_queue[$api_user_id])
-					&& count($zp_request_queue[$api_user_id]["requests"]) > 1 )
-			{
-				$item_keys = "";
-
-				foreach ( $zp_request_queue[$api_user_id]["requests"] as $num => $request ) {
-					if ( $item_keys != "" ) $item_keys .= ",";
-					$item_keys .= $request;
-				}
-
-				$zp_request_queue[$api_user_id]["requests"][$num] = $zp_import_url . "&itemKey=" . $item_keys;
-			}
-			else // one request or less
-			{
-				// Ignore for only one item
-				if ( strpos( $zp_request_queue[$api_user_id]["items"], "," ) !== false )
-				{
-					if ( is_array($zp_request_queue[$api_user_id]["items"]) )
-						$zp_request_queue[$api_user_id]["items"] = implode(",", $zp_request_queue[$api_user_id]["items"]);
-
-					$zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url . "&itemKey=" . $zp_request_queue[$api_user_id]["items"] );
-				}
-				else // one item
-				{
-					$zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url );
-				}
-			}
-		}
-		else if ( ! $zp_request_queue
-				&& $api_user_id )
-		{
-			// Assume normal
-			$zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url );
-		}
-		else
+		if ($zp_request_queue
+				&& array_key_exists($api_user_id, $zp_request_queue)) {
+      // Assume items
+      // if ( array_key_exists("requests", $zp_request_queue[$api_user_id])
+      // 		&& count($zp_request_queue[$api_user_id]["requests"]) > 1 )
+      // Multiple requests
+      if (array_key_exists("requests", $zp_request_queue[$api_user_id])
+   					&& count($zp_request_queue[$api_user_id]["requests"]) > 1) {
+          $item_keys = "";
+          foreach ( $zp_request_queue[$api_user_id]["requests"] as $num => $request ) {
+      					if ( $item_keys != "" ) $item_keys .= ",";
+      					$item_keys .= $request;
+      				}
+          $zp_request_queue[$api_user_id]["requests"][$num] = $zp_import_url . "&itemKey=" . $item_keys;
+      } elseif (strpos( $zp_request_queue[$api_user_id]["items"], "," ) !== false) {
+          if ( is_array($zp_request_queue[$api_user_id]["items"]) )
+     						$zp_request_queue[$api_user_id]["items"] = implode(",", $zp_request_queue[$api_user_id]["items"]);
+          $zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url . "&itemKey=" . $zp_request_queue[$api_user_id]["items"] );
+      } else // one item
+  				{
+  					$zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url );
+  				}
+  } elseif (! $zp_request_queue
+				&& $api_user_id) {
+      // Assume normal
+      $zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url );
+  } else
 		{
 			// Assume broken or no requests
 			$zp_request_queue = false;

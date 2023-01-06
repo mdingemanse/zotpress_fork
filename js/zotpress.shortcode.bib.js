@@ -175,9 +175,11 @@ jQuery(document).ready(function()
 				var zp_items = jQuery.parseJSON( data );
 
 				// Account for Zotero errors
-				if ( zp_items.status == 'empty' )
+				// QUESTION: Did something change? Now have to ref [0]
+				if ( zp_items.status == 'empty'
+			 			|| zp_items.data == 'Not found' )
 				{
-					var zp_msg = zpShortcodeAJAX.txt_zperror;
+					var zp_msg = zpShortcodeAJAX.txt_zperror + " ";
 
 					if ( zp_items.data == 0 )
 					{
@@ -206,6 +208,9 @@ jQuery(document).ready(function()
 				{
 					// First, remove any PHP SEO items that exist
 					jQuery("#"+zp_items.instance+" .zp-SEO-Content").remove();
+
+					// // QUESTION: Then prepare the data as a JSON?
+					// zp_items.data = jQuery.parseJSON(zp_items.data);
 
 					// First, display the items from this request, if any:
 					if ( typeof zp_items != 'undefined'

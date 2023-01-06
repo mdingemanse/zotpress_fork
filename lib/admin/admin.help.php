@@ -1,4 +1,3 @@
-
         <div id="zp-Zotpress" class="wrap">
 
             <?php include( dirname(__FILE__) . '/admin.menu.php' ); ?>

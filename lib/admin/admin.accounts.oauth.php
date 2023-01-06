@@ -1,4 +1,4 @@
- <?php
+<?php
 
 /** Code provided by and adapted from: http://www.zotero.org/support/dev/server_api/v2/oauth
 	* Note that this example uses the php OAuth extension http://php.net/manual/en/book.oauth.php
@@ -197,7 +197,7 @@
         break;
     }
 
-    if (isset( $access_token_info ))
+    if ( isset( $access_token_info ) )
     {
         // ADD PRIVATE KEY TO THE USER'S ACCOUNT IN ZOTPRESS
         global $wpdb;
@@ -229,4 +229,4 @@
     }
 
 
-  ?>
+?>
