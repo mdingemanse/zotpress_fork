@@ -35,18 +35,16 @@ function Zotpress_shortcode_request( $checkcache = false )
 	$zp_import_contents = new ZotpressRequest();
 
 	// Set up request meta
-	$zp_request_meta = array( "request_last" => $zpr["request_last"], "request_next" => 0 );
+	$zp_request_meta = array( "request_last" => (int) $zpr["request_last"], "request_next" => 0 );
 
 	// Set up data variable
 	$zp_all_the_data = array();
 
 
 
-	/**
-	*
-	*  Format Zotero request URL:
-	*
-	*/
+	// +---------------------------+
+	// | Format Zotero request URL |
+	// +---------------------------+
 
 	// Account for items + collection_id
 	if ( $zpr["item_type"] == "items"
@@ -148,7 +146,11 @@ function Zotpress_shortcode_request( $checkcache = false )
 	}
 
 
-	// BUILD REQUEST URL FOR EVERY REQUEST
+
+	// +--------------------+
+	// | Build request URLs |
+	// +--------------------+
+
 	if ( $zp_request_queue !== [] )
 	{
 		// REVIEW: Does setting $zp_request_queue here overwrite it for each account?
@@ -163,16 +165,12 @@ function Zotpress_shortcode_request( $checkcache = false )
 
 
 
-
-	/**
-	*
-	*	 TESTING:
-	*
-	*/
+	// +---------+
+	// | TESTING |
+	// +---------+
 
 	// var_dump($zp_request_queue);exit;
-	//
-	//
+
     // if ( $zpr["request_start"] == 50 ) {
     //    var_dump("shortcode.request.php TESTING: ");
     //    print_r($_GET); var_dump("<br /><br />url: ".$zp_import_url);
@@ -183,11 +181,10 @@ function Zotpress_shortcode_request( $checkcache = false )
 
 
 
-	/**
-	*
-	*	 Request the data:
-	*
-	*/
+
+	// +------------------+
+	// | Request the data |
+	// +------------------+
 
 	$zp_request = array();
 	$zp_error = false;
@@ -322,6 +319,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 	if ( ( ! $checkcache && ( ! $zp_error && $zp_request["json"] != "0" ) )
 	 		|| ( $checkcache && $zp_usecache && ( ! $zp_error && $zp_request["json"] != "0" ) ) )
 	{
+		
 		// Decode the JSONs
 		// Thanks to Adnreea Onica @ StackOverflow
 		$temp_headers = json_decode( $zp_request["headers"] );
@@ -346,15 +344,23 @@ function Zotpress_shortcode_request( $checkcache = false )
 			$temp_link = explode( "start=", $temp_link[1] );
 			$temp_link = explode( "&", $temp_link[1] );
 
-			$zp_request_meta["request_last"] = (int) $temp_link[0];
+			// // FIX: Accounted for limit ...?
+			// if ( $zpr["limit"] ) {
+			// 	$zp_request_meta["request_last"] = (int) $zpr["limit"];
+			// }
+			// else {
+				$zp_request_meta["request_last"] = (int) $temp_link[0];
+			// }
 		}
-
+		
 		// Figure out the next starting position for the next request, if any
+		// 7.3.3: Changed from >= to >
 		if ( $zp_request_meta["request_last"] >= ($zpr["request_start"] + $zpr["limit"]) )
 			$zp_request_meta["request_next"] = $zpr["request_start"] + $zpr["limit"] ;
 
-		// Overwrite request if tag limit
-		if ( $zpr["item_type"] == "items"
+		// Overwrite request if limit
+		// 7.3.3: Fix for collections?
+		if ( ( $zpr["item_type"] == "items" || $zpr["item_type"] == "collections" )
 				&& $zpr["overwrite_request"] === true )
 		{
 			$zp_request_meta["request_next"] = 0;
@@ -373,13 +379,15 @@ function Zotpress_shortcode_request( $checkcache = false )
 
 			$zp_request_meta["request_last"] = $zpr["overwrite_last_request"];
 		}
+// var_dump($zpr["limit"]);
+// var_dump( $zpr["request_start"], ((int) $zp_request_meta["request_next"]),$zp_request_meta["request_last"], $zpr["limit"],"<br><br>");
 
 
-		/**
-		*
-		*	 Format the data:
-		*
-		*/
+
+		// +-----------------+
+		// | Format the data |
+		// +-----------------+
+
 		if ( count($temp_data) > 0 )
 		{
 			// If single, place the object into an array
@@ -876,11 +884,12 @@ function Zotpress_shortcode_request( $checkcache = false )
 		// $zp_all_the_data = ""; // Necessary?
 	}
 
-	/**
-	*
-	*	 Finish and output the data:
-	*
-	*/
+
+
+	// +----------------------------+
+	// | Finish and output the data |
+	// +----------------------------+
+
 	unset($zp_import_contents);
 	unset($zp_import_url);
 	unset($zp_xml);
@@ -963,7 +972,5 @@ function Zotpress_shortcode_request( $checkcache = false )
 }
 add_action( 'wp_ajax_zpRetrieveViaShortcode', 'Zotpress_shortcode_request' );
 add_action( 'wp_ajax_nopriv_zpRetrieveViaShortcode', 'Zotpress_shortcode_request' );
-
-
 
 ?>

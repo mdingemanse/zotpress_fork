@@ -9,8 +9,9 @@ function Zotpress_options()
 		wp_die( __('Only logged-in editors can access this page.', 'zotpress'), __('Zotpress: 403 Access Denied', 'zotpress'), array( 'response' => 403 ) );
 
 
-
-    // SET UP PAGES
+	// +--------------------+
+	// | Set up admin pages |
+	// +--------------------+
 
     if (isset($_GET['setup'])) {
         include( dirname(__FILE__) . '/admin.setup.php' );
@@ -47,7 +48,6 @@ function Zotpress_process_accounts_AJAX()
 	$xml = "";
 
 
-
     // +-------------+
     // | ADD ACCOUNT |
     // +-------------+
@@ -65,7 +65,6 @@ function Zotpress_process_accounts_AJAX()
 				"nickname_format"=>array(0,"<strong>Nickname</strong> was formatted incorrectly.")
 			);
 
-        // Check the post variables and record errors
         // ACCOUNT TYPE
         if ($_GET['account_type'] != "")
 			$account_type = $_GET['account_type'] == "groups" ? "groups" : "users";
@@ -471,27 +470,29 @@ function Zotpress_process_accounts_AJAX()
     elseif ( isset($_GET['action_type'])
             && $_GET['action_type'] == "remove_image" )
     {
-          // Set up error array
-          $errors = array(
-       					"item_key_blank"=>array(0,"<strong>Item Key</strong> was left blank or formatted incorrectly."),
-       					"api_user_id_blank"=>array(0,"<strong>API User ID</strong> was left blank or formatted incorrectly.")
-       				);
-          // BASIC VARS
-          $item_key = false;
-          if (preg_match("/^[A-Z0-9]+$/", $_GET['item_key']))
-       				$item_key = htmlentities(trim($_GET['item_key']));
-       			else
-       				$errors['item_key_blank'][0] = 1;
-          $api_user_id = false;
-          if (preg_match("/^[A-Z0-9]+$/", $_GET['api_user_id']))
-       				$api_user_id = htmlentities(trim($_GET['api_user_id']));
-       			else
-       				$errors['api_user_id_blank'][0] = 1;
+		// Set up error array
+		$errors = array(
+			"item_key_blank"=>array(0,"<strong>Item Key</strong> was left blank or formatted incorrectly."),
+			"api_user_id_blank"=>array(0,"<strong>API User ID</strong> was left blank or formatted incorrectly.")
+		);
 
-        // CHECK ERRORS
+		// BASIC VARS
+		$item_key = false;
+		if (preg_match("/^[A-Z0-9]+$/", $_GET['item_key']))
+			$item_key = htmlentities(trim($_GET['item_key']));
+		else
+			$errors['item_key_blank'][0] = 1;
+
+		$api_user_id = false;
+		if (preg_match("/^[A-Z0-9]+$/", $_GET['api_user_id']))
+			$api_user_id = htmlentities(trim($_GET['api_user_id']));
+		else
+			$errors['api_user_id_blank'][0] = 1;
+
+        // CHECK FOR ERRORS
         $errorCheck = false;
-        foreach ($errors as $field => $error) {
-			if ($error[0] == 1) {
+        foreach ( $errors as $field => $error ) {
+			if ( $error[0] == 1 ) {
 				$errorCheck = true;
 				break;
 			}
@@ -513,7 +514,11 @@ function Zotpress_process_accounts_AJAX()
 			$xml .= "<result success='true' item_key='".$item_key."' />\n";
 		}
 
-		// DISPLAY ERRORS
+
+		// +----------------+
+		// | Display errors |
+		// +----------------+
+
 		else
 		{
 			$xml .= "<result success='false' />\n";
@@ -528,7 +533,9 @@ function Zotpress_process_accounts_AJAX()
     }
 
 
-	// DISPLAY XML
+	// +-------------+
+	// | Display XML |
+	// +-------------+
 
 	header('Content-Type: application/xml; charset=ISO-8859-1');
 	echo "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";

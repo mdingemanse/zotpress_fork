@@ -77,7 +77,9 @@ function Zotpress_func( $atts )
     ), $atts, 'zotpress'));
 
 
-    // FORMAT & CLEAN PARAMETERS
+    // +---------------------------+
+    // | FORMAT & CLEAN PARAMETERS |
+    // +---------------------------+
 
     // Filter by account
     if ($user_id) {
@@ -280,9 +282,9 @@ function Zotpress_func( $atts )
         $forcenumber = true; else $forcenumber = false;
 
 
-
-
-    // GET ACCOUNT
+    // +-------------+
+    // | GET ACCOUNT |
+    // +-------------+
 
     global $wpdb;
 
@@ -390,7 +392,9 @@ function Zotpress_func( $atts )
 		<div class="zp-List loading">';
 
 
-    // GENERATE SHORTCODE PLACEHOLDER
+    // +--------------------------------+
+    // | GENERATE SHORTCODE PLACEHOLDER |
+    // +--------------------------------+
 
     if ( $zp_account === false )
     {

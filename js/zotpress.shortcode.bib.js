@@ -9,6 +9,7 @@ jQuery(document).ready(function()
 	if ( jQuery(".zp-Zotpress-Bib").length > 0 )
 	{
 		var zp_collections = {};
+		var zp_totalItems = 0;
 
 		jQuery(".zp-Zotpress-Bib").each( function( index, instance )
 		{
@@ -173,6 +174,12 @@ jQuery(document).ready(function()
 			success: function(data)
 			{
 				var zp_items = jQuery.parseJSON( data );
+
+				if ( ! update ) zp_totalItems += zp_items.data.length;
+				if ( update ) console.log("zp: checking for updates ...");
+				if ( update ) console.log("zp: updating items",zp_items.data.length);
+				else console.log("zp: adding items",zp_items.data.length);
+				console.log("zp: total items so far",zp_totalItems);
 
 				// Account for Zotero errors
 				// QUESTION: Did something change? Now have to ref [0]
@@ -431,7 +438,10 @@ jQuery(document).ready(function()
 									// Start the item requests
 									zp_get_items ( 0, 0, $instance, params, false );
 								}
-								else {
+								else
+								{
+									console.log("zp: done + reformat if needed");
+
 									zp_bib_reformat( $instance, zp_items, params );
 								}
 							}
@@ -441,6 +451,8 @@ jQuery(document).ready(function()
 					// Message that there's no items
 					else
 					{
+						console.log("zp: done");
+
 						if ( update === true )
 						{
 							jQuery("#"+$instance.attr("id")+" .zp-List").removeClass("loading");
