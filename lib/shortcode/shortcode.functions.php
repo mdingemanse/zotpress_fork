@@ -382,19 +382,19 @@ function Zotpress_prep_ajax_request_vars()
 		if ($_GET['sortby'] == "author") {
       $zpr["sortby"] = "creator";
       $zpr["order"] = "asc";
-  } elseif ($_GET['sortby'] == "default") {
-      $zpr["sortby"] = "default";
-      // entry order
-  } elseif ($_GET['sortby'] == "year") {
-      $zpr["sortby"] = "date";
-      $zpr["order"] = "desc";
-  } elseif ($zpr["type"] == "intext" && $_GET['sortby'] == "default") {
-      $zpr["sortby"] = "default";
-  } else
-		{
-			$zpr["sortby"] = $_GET['sortby'];
-		}
+	} elseif ($_GET['sortby'] == "default") {
+		$zpr["sortby"] = "default";
+		// entry order
+	} elseif ($_GET['sortby'] == "year") {
+		$zpr["sortby"] = "date";
+		$zpr["order"] = "desc";
+	} elseif ($zpr["type"] == "intext" && $_GET['sortby'] == "default") {
+		$zpr["sortby"] = "default";
+	} else {
+		$zpr["sortby"] = $_GET['sortby'];
 	}
+	}
+	
 	if ( isset($_GET['order'])
 			&& ( strtolower($_GET['order']) == "asc" || strtolower($_GET['order']) == "desc" ) )
 		$zpr["order"] = strtolower($_GET['order']);
