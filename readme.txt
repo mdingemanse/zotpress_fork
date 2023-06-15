@@ -7,8 +7,8 @@ Tags: zotero, zotpress, citation manager, citations, citation, cite, citing, bib
 Author URI: http://katieseaborn.com/
 Author: Katie Seaborn
 Requires at least: 3.5
-Tested up to: 6.1.1
-Stable tag: 7.3.3
+Tested up to: 6.2.1
+Stable tag: 7.3.4
 License: Apache2.0
 
 Zotpress displays your Zotero citations on WordPress.
@@ -71,6 +71,12 @@ The F.A.Q. can be found on the "Help" page of every Zotpress installation. If yo
 6. Allow visitors to search your library by item metadata or tag, or both.
 
 == Changelog ==
+
+= 7.3.4 =
+
+* Fixed OAuth vulnerability and simplified authentication procedure.
+* Fixed in-text date ID.
+* Fixed cite URL, broken due to api_user_id.
 
 = 7.3.3 =
 
@@ -857,6 +863,10 @@ The F.A.Q. can be found on the "Help" page of every Zotpress installation. If yo
 * Zotpress makes its debut.
 
 == Upgrade Notice ==
+
+= 7.3.4 =
+
+Fixed vulnerability related to optional OAuth authentication procedure.
 
 = 7.3.2 =
 

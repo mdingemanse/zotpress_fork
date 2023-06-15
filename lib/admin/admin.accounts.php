@@ -76,8 +76,7 @@ if ( current_user_can('edit_others_posts') )
 								}
 								else
 								{
-									add_thickbox();
-									$code .= 'No private key entered. <a class="zp-OAuth-Button thickbox" href="'.get_bloginfo( 'url' ).'/wp-content/plugins/zotpress/lib/admin/admin.accounts.oauth.php?TB_iframe=true&width=600&height=480&oauth_user='.$account->api_user_id.'&amp;return_uri='.get_bloginfo('url').'">'.__('Start OAuth','zotpress').'?</a>';
+									$code .= 'No private key entered. <strong><a class="zp-OAuth-Button" href="'.get_bloginfo( 'url' ).'/wp-content/plugins/zotpress/lib/admin/admin.accounts.oauth.php?oauth_user='.$account->api_user_id.'">'.__('Authenticate via OAuth','zotpress').'?</a></strong> <strong>Note:</strong> '.__('Clicking this link will take you to the Zotero website. Once there, click the "Change Permissions" button. For User accounts, be sure "Allow library access" is checked. For Group accounts, be sure "Read Only" is selected.','zotpress');
 								}
 								$code .= "</td>\n";
 
