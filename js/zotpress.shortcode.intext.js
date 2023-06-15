@@ -739,10 +739,12 @@ jQuery(document).ready(function()
 
 				zp_items.data[index-1].bib = zp_items.data[index-1].bib.replace( originalTempItemDate, newTempItemDate );
 
-				var $tempEntry = jQuery("#"+zp_items.instance+" .zp-List .zp-Entry[data-zp-author-date='"+tempAuthor+"-"+originalTempItemDate.replace(" ","-")+"']");
+				var $tempEntry = jQuery("#"+zp_items.instance+" .zp-List .zp-Entry[data-zp-author-date='"+tempAuthor+"-"+originalTempItemDate+"']");
+				// var $tempEntry = jQuery("#"+zp_items.instance+" .zp-List .zp-Entry[data-zp-author-date='"+tempAuthor+"-"+originalTempItemDate.replace(" ","-")+"']");
 
 				$tempEntry
-					.attr("data-zp-author-date", tempAuthor+"-"+newTempItemDate.replace(" ","-"))
+					.attr("data-zp-author-date", tempAuthor+"-"+newTempItemDate)
+					// .attr("data-zp-author-date", tempAuthor+"-"+newTempItemDate.replace(" ","-"))
 					.attr("data-zp-date-author", tempItemDate + alphaArray[authDateInstances-2] + "-" + tempAuthor);
 
 				jQuery(".csl-entry", $tempEntry).html(
