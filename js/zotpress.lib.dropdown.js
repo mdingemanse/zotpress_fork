@@ -1,22 +1,19 @@
 jQuery(document).ready(function()
 {
-	///////////////////////////////////////////////
-	//
-	//   ZOTPRESS LIBRARY DROPDOWN
-	//
-	///////////////////////////////////////////////
+	///////////////////////////////////
+	//                               //
+	//   ZOTPRESS LIBRARY DROPDOWN   //
+	//                               //
+	///////////////////////////////////
 
+	// TODO: Like the searchbar, doesn't update display right away after updating
 	// TODO: notes, abstract
 
-	// if ( jQuery(".zp-Browse-Collections-Select").length > 0 )
 	if ( jQuery(".zp-Browse").length > 0 )
 	{
 		// Go through each instance
-		// jQuery(".zp-Browse").each( function(l)
 		for (let l = 0; l < window.zpBrowseList.length; ++l)
 		{
-			// var zpThisLib = jQuery(".zp-Browse-Collections-Select", jQuery(this)).parents().eq(3); // zp-Browse
-			// var zpThisLib = jQuery(this); // zp-Browse
 			var zpThisLib = jQuery("#"+window.zpBrowseList[l].id); // zp-Browse
 
 			var zpThisLibProps = {
@@ -46,6 +43,7 @@ jQuery(document).ready(function()
 					zpThisLibProps.zpCollectionId = zpThisLibProps.zpTopLevel;
 			}
 			if ( jQuery(".ZP_URLWRAP", zpThisLib).length > 0 ) zpThisLibProps.zpURLWrap = jQuery(".ZP_URLWRAP", zpThisLib).text();
+			var zpUpdateNeeded = false; if ( jQuery(".ZP_UPDATENEEDED", zpThisLib).text().trim().length > 0 && jQuery(".ZP_UPDATENEEDED", zpThisLib).text() == "true" ) zpUpdateNeeded = true;
 
 			// Handle no browse bar
 			var browsebar = true; if ( jQuery(".ZP_BROWSEBAR", zpThisLib).text() == "" ) browsebar = false;
@@ -59,7 +57,7 @@ jQuery(document).ready(function()
 			// Otherwise, get items
 			zplib_get_items ( l, zpThisLibProps, zpThisLib, 0, 0, false );
 
-		// }); // each
+			console.log('---');
 		}
 	} // Zotpress DropDown Library
 
@@ -79,6 +77,7 @@ jQuery(document).ready(function()
           });
 		}
 	}
+
 
   	// Get list of collections
 	function zplib_get_collections ( l, zpThisLibProps, zpThisLib, request_start, request_last, update )
@@ -278,6 +277,9 @@ jQuery(document).ready(function()
 	// Get list items
 	function zplib_get_items ( i, zpThisLibProps, zpThisLib, request_start, request_last, update )
 	{
+		console.log('zp: calling zplib_get_items with update check?', update);
+		console.log('zp: is an update needed?', zpUpdateNeeded);
+
 		// Set parameter defaults
 		if ( typeof(request_start) === "undefined" || request_start == "false" || request_start == "" )
 			request_start = 0;
@@ -320,6 +322,7 @@ jQuery(document).ready(function()
 				'order': jQuery(".ZP_ORDER", zpThisLib).text(),
 
 				'update': update,
+				'request_update': zpUpdateNeeded,
 				'request_start': request_start,
 				'request_last': request_last,
 				'zpShortcode_nonce': zpShortcodeAJAX.zpShortcode_nonce
@@ -512,14 +515,27 @@ jQuery(document).ready(function()
 						jQuery(".zp-List", zpThisLib).removeClass("loading");
 						jQuery(".zp-List", zpThisLib).find(".zp_display_progress").remove();
 
-						// Check for updates
-						if ( ! jQuery(".zp-List", zpThisLib).hasClass("updating") )
+						// Check for updates, if needed:
+						if ( zp_items.updateneeded )
 						{
-							// Parameters: request_start, request_last, update
+							console.log("zp: update needed");
+
+							zpUpdateNeeded = true;
+							// zplib_get_items ( i, zpThisLibProps, zpThisLib, request_start, request_last, update )
 							zplib_get_items ( i, zpThisLibProps, zpThisLib, 0, 0, true );
+							// zplib_get_items ( 0, 0, $instance, params, true );
 						}
+
+						// // Check for updates
+						// if ( ! jQuery(".zp-List", zpThisLib).hasClass("updating") )
+						// {
+						// 	// Parameters: request_start, request_last, update
+						// 	zplib_get_items ( i, zpThisLibProps, zpThisLib, 0, 0, true );
+						// }
 						else // If none, then re/sort and re/number
 						{
+							zpUpdateNeeded = false;
+
 							var sortby = jQuery(".ZP_SORTBY", zpThisLib).text();
 							var orderby = jQuery(".ZP_ORDER", zpThisLib).text();
 

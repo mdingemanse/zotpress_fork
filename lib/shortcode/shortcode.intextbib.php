@@ -5,7 +5,7 @@ function Zotpress_zotpressInTextBib ($atts)
     /*
     *   RELIES ON THESE GLOBAL VARIABLES:
     *
-    *   $GLOBALS['zp_shortcode_instances'][get_the_ID()] {instantiated previously}
+    *   $GLOBALS['zp_shortcode_instances'][$post->ID] {instantiated previously}
     *
     */
 
@@ -39,6 +39,8 @@ function Zotpress_zotpressInTextBib ($atts)
 
     ), $atts));
 
+
+    global $post;
 
 
     // FORMAT PARAMETERS
@@ -112,7 +114,7 @@ function Zotpress_zotpressInTextBib ($atts)
 
 
 	// Get in-text items
-	if ( isset( $GLOBALS['zp_shortcode_instances'][get_the_ID()] ) )
+	if ( isset( $GLOBALS['zp_shortcode_instances'][$post->ID] ) )
 	{
         // Handle the possible formats of item/s for in-text
     	//
@@ -124,7 +126,7 @@ function Zotpress_zotpressInTextBib ($atts)
     	// [zotpressInText items="{000001:NCXAA92F,10-15},{000003:3ITTIXHP}"]
     	// So no multiples without curlies or non-curlies in multiples
 
-		foreach ( $GLOBALS['zp_shortcode_instances'][get_the_ID()] as $intextitem )
+		foreach ( $GLOBALS['zp_shortcode_instances'][$post->ID] as $intextitem )
 		{
             // REVIEW: Actually, let's just remove pages
             $intextitem["items"] = preg_replace( "/(((,))+([\w\d-]+(})+))++/", "}", $intextitem["items"] );
@@ -139,14 +141,14 @@ function Zotpress_zotpressInTextBib ($atts)
 
     // Generate instance id for shortcode
     // REVIEW: Added Post ID and newish attributes
-    $instance_id = "zotpress-".md5($item_key.$style.$sortby.$order.$title.$showimage.$showtags.$download.$shownotes.$abstracts.$citeable.$target.$urlwrap.$forcenumber.$highlight.get_the_ID());
+    $instance_id = "zotpress-".md5($item_key.$style.$sortby.$order.$title.$showimage.$showtags.$download.$shownotes.$abstracts.$citeable.$target.$urlwrap.$forcenumber.$highlight.$post->ID);
 
 
     // GENERATE IN-TEXT BIB STRUCTURE
 	$zp_output = "\n<div id='zp-InTextBib-".$instance_id."'";
     $zp_output .= " class='zp-Zotpress zp-Zotpress-InTextBib wp-block-group";
 	if ( $forcenumber ) $zp_output .= " forcenumber";
-	$zp_output .= " zp-Post-".get_the_ID()."'>";
+	$zp_output .= " zp-Post-".$post->ID."'>";
 	$zp_output .= '
 		<span class="ZP_ITEM_KEY" style="display: none;">'.$item_key.'</span>
 		<span class="ZP_STYLE" style="display: none;">'.$style.'</span>
@@ -163,7 +165,7 @@ function Zotpress_zotpressInTextBib ($atts)
 		<span class="ZP_URLWRAP" style="display: none;">'.$urlwrap.'</span>
 		<span class="ZP_FORCENUM" style="display: none;">'.$forcenumber.'</span>
 		<span class="ZP_HIGHLIGHT" style="display: none;">'.$highlight.'</span>
-		<span class="ZP_POSTID" style="display: none;">'.get_the_ID().'</span>';
+		<span class="ZP_POSTID" style="display: none;">'.$post->ID.'</span>';
 
         // <span class="ZP_API_USER_ID" style="display: none;">'.$api_user_id.'</span>
 		// <span class="ZOTPRESS_PLUGIN_URL" style="display:none;">'.ZOTPRESS_PLUGIN_URL.'</span>'

@@ -47,6 +47,9 @@ class zotpressLib
 
 	public function setType($type)
 	{
+		if ( $type === false )
+			$type = "dropdown";
+		
 		$this->type = $type;
 	}
 
@@ -175,6 +178,8 @@ class zotpressLib
 	public function getLib()
 	{
 		global $wpdb;
+		global $post;
+
 		$content = "";
 
 		// Turn on/off minified versions if testing/live
@@ -212,16 +217,21 @@ class zotpressLib
 		if (isset($_GET['page'])
 				&& $_GET['page'] == "Zotpress" // REVIEW: only include GET if admin?
 				&& isset($_GET['collection_id'])
-				&& preg_match("/^[0-9a-zA-Z]+$/", $_GET['collection_id'])) {
-      $collection_id = trim($_GET['collection_id']);
-  } elseif (isset($_GET['page'])
+				&& preg_match("/^[0-9a-zA-Z]+$/", $_GET['collection_id']))
+		{
+			$collection_id = trim($_GET['collection_id']);
+  		} 
+		elseif (isset($_GET['page'])
 				&& $_GET['page'] == "Zotpress" // REVIEW: only include GET if admin?
 				&& isset($_GET['subcollection_id'])
-				&& preg_match("/^[0-9a-zA-Z]+$/", $_GET['subcollection_id'])) {
-      $collection_id = trim($_GET['subcollection_id']);
-  } else
+				&& preg_match("/^[0-9a-zA-Z]+$/", $_GET['subcollection_id']))
+		{
+     		$collection_id = trim($_GET['subcollection_id']);
+  		}
+		else
+		{
 			$collection_id = $this->collection; // from false
-
+		}
 
 		// Collection Name
 		global $collection_name;
@@ -276,9 +286,13 @@ class zotpressLib
 
 		// Browse instance ID
 		// REVIEW: Added post ID
+		if ( ! $post || ( $post && ! property_exists($post, "ID") ) ) {
+			$post = (object) array('ID' => 0);
+		}
+
 	    $instance_id = "zotpress-lib-"
 			.md5(
-				get_the_ID()
+				$post->ID
 				.$api_user_id
 				.$collection_id
 				.$collection_name
@@ -334,6 +348,10 @@ class zotpressLib
 		$content .= '<span class="ZP_URLWRAP" style="display: none;">'.$this->urlwrap.'</span>';
 		if ( $this->is_admin ) $content .= '<span class="ZP_ISADMIN" style="display: none;">'.$this->is_admin.'</span>';
 		$content .= '<span class="ZP_BROWSEBAR" style="display: none;">'.$this->browsebar.'</span>';
+		$content .= "\n";
+
+		$maxperpage = 10; if ( $this->getMaxPerPage() !== false ) $maxperpage = (int) $this->getMaxPerPage();
+		$content .= '<input type="hidden" class="ZOTPRESS_AC_MAXPERPAGE" name="ZOTPRESS_AC_MAXPERPAGE" value="'.$maxperpage.'">';
         $content .= "\n";
 
 		// Deal with Browse Bar by Type
@@ -409,16 +427,18 @@ class zotpressLib
 
 
 	                // Min Length
-	                $minlength = 3; if ( $this->getMinLength() ) $minlength = (int) $this->getMinLength();
+	                $minlength = 3; if ( $this->getMinLength() !== false ) $minlength = (int) $this->getMinLength();
 	                $content .= '<input type="hidden" class="ZOTPRESS_AC_MINLENGTH" name="ZOTPRESS_AC_MINLENGTH" value="'.$minlength.'" />';
 
 	                // Max Results per Request
-	                $maxresults = 50; if ( $this->getMaxResults() ) $maxresults = (int) $this->getMaxResults();
+	                $maxresults = 50; if ( $this->getMaxResults() !== false ) $maxresults = (int) $this->getMaxResults();
 	                $content .= '<input type="hidden" class="ZOTPRESS_AC_MAXRESULTS" name="ZOTPRESS_AC_MAXRESULTS" value="'.$maxresults.'" />';
+					// var_dump("max", $maxresults);
 
-	                // Max Per Page
-	                $maxperpage = 10; if ( $this->getMaxPerPage() ) $maxperpage = (int) $this->getMaxPerPage();
-	                $content .= '<input type="hidden" class="ZOTPRESS_AC_MAXPERPAGE" name="ZOTPRESS_AC_MAXPERPAGE" value="'.$maxperpage.'" />';
+	                // // Max Per Page
+					// REVIEW: Need this in the dropdown, too, so moving up
+	                // $maxperpage = 10; if ( $this->getMaxPerPage() !== false ) $maxperpage = (int) $this->getMaxPerPage();
+	                // $content .= '<input type="hidden" class="ZOTPRESS_AC_MAXPERPAGE" name="ZOTPRESS_AC_MAXPERPAGE" value="'.$maxperpage.'" />';
 
 	                // Max Pages
 	                $maxpages = (int) $this->getMaxPages();
@@ -468,8 +488,9 @@ class zotpressLib
                 $content .= "<div class='zp-Collection-Title'>".__('Viewing items tagged','zotpress')." \"<strong>".str_replace("+", " ", $tag_id)."</strong>\"</div>\n";
             } elseif ($this->toplevel == "toplevel" || $this->toplevel === false) {
                 $content .= "<div class='zp-Collection-Title'>".__('Top Level Items','zotpress')."</div>\n";
-            } else
-        					$content .= "<div class='zp-Collection-Title'>".__('Default Collection Items','zotpress')."</div>\n";
+            } else {
+				$content .= "<div class='zp-Collection-Title'>".__('Default Collection Items','zotpress')."</div>\n";
+			}
         }
 
         // Searchbar

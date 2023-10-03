@@ -286,8 +286,10 @@ function Zotpress_prep_ajax_request_vars()
 	$zpr["item_type"] = "items"; if ( isset($_GET['item_type']) && $_GET['item_type'] != "" ) $zpr["item_type"] = $_GET['item_type'];
 	$zpr["get_top"] = false; if ( isset($_GET['get_top']) ) $zpr["get_top"] = true;
 	$zpr["sub"] = false;
-	$zpr["is_dropdown"] = false; if ( isset($_GET['is_dropdown']) ) $zpr["is_dropdown"] = true;
+	$zpr["is_dropdown"] = false; if ( isset($_GET['is_dropdown']) && $_GET['is_dropdown'] == "true" ) $zpr["is_dropdown"] = true;
 	$zpr["update"] = false; if ( isset($_GET['update']) && $_GET['update'] == "true" ) $zpr["update"] = true;
+	$zpr["updateneeded"] = false; if ( isset($_GET['updateneeded']) && $_GET['updateneeded'] == "true" ) $zpr["updateneeded"] = true;
+	$zpr["request_update"] = false; if ( isset($_GET['request_update']) && $_GET['request_update'] == "true" ) $zpr["request_update"] = true;
 
 	// instance id, item key, collection id, tag id
 	$zpr["instance_id"] = false; if ( isset($_GET['instance_id']) ) $zpr["instance_id"] = $_GET['instance_id'];
@@ -488,15 +490,14 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 
 	// Get account and $api_user_id
 	if ($api_user_id) {
-     $zp_account = zp_get_account ($wpdb, $api_user_id);
- } elseif ($zpr["api_user_id"]) {
-     $zp_account = zp_get_account ($wpdb, $zpr["api_user_id"]);
-     $api_user_id = $zpr["api_user_id"];
- } else
-       {
-			$zp_account = zp_get_account ($wpdb);
-			$api_user_id = $zp_account[0]->api_user_id;
-		}
+		$zp_account = zp_get_account ($wpdb, $api_user_id);
+	} elseif ($zpr["api_user_id"]) {
+		$zp_account = zp_get_account ($wpdb, $zpr["api_user_id"]);
+		$api_user_id = $zpr["api_user_id"];
+	} else {
+		$zp_account = zp_get_account ($wpdb);
+		$api_user_id = $zp_account[0]->api_user_id;
+	}
 
 	// Make sure account was founded (is synced)
 	if ( count($zp_account) > 0 )
@@ -510,74 +511,78 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 	    	// Account for single item with new style
 	    	if (gettype( $zpr["item_key"] ) == "string"
 					&& strlen($zpr["item_key"]) > 0
-	    			&& $zpr["item_key"][0] == "{") {
-          $zpr_temp = explode(':', $zpr["item_key"]);
-          $zpr_temp = count($zpr_temp) > 1 ? $zpr_temp[1] : $zpr_temp[0];
-          $zpr["item_key"] = rtrim( $zpr_temp, "}");
-          // Account for page numbers
-          if ( strpos( $zpr["item_key"], ',' ) )
-      				{
-      					$zpr_temp = explode(',', $zpr["item_key"]);
-      					$zpr["item_key"] = rtrim( $zpr_temp[0], "}");
-      				}
-      } elseif (gettype( $zpr["item_key"] ) == "array"
+	    			&& $zpr["item_key"][0] == "{")
+			{
+				$zpr_temp = explode(':', $zpr["item_key"]);
+				$zpr_temp = count($zpr_temp) > 1 ? $zpr_temp[1] : $zpr_temp[0];
+				$zpr["item_key"] = rtrim( $zpr_temp, "}");
+				// Account for page numbers
+				if ( strpos( $zpr["item_key"], ',' ) )
+				{
+					$zpr_temp = explode(',', $zpr["item_key"]);
+					$zpr["item_key"] = rtrim( $zpr_temp[0], "}");
+				}
+      			} elseif (gettype( $zpr["item_key"] ) == "array"
 	    			&& count( $zpr["item_key"] ) == 1
-	    			&& $zpr["item_key"][0][0] == "{") {
-          // $zpr["item_key"] = rtrim( explode(':', $zpr["item_key"][0])[1] , "}");
-          $zpr["item_key"] = ltrim( rtrim( $zpr["item_key"][0], "}" ), "{" );
-          // Account for page numbers
-          if ( strpos( $zpr["item_key"], ',' ) )
+	    			&& $zpr["item_key"][0][0] == "{")
+				{
+					// $zpr["item_key"] = rtrim( explode(':', $zpr["item_key"][0])[1] , "}");
+					$zpr["item_key"] = ltrim( rtrim( $zpr["item_key"][0], "}" ), "{" );
+					
+					// Account for page numbers
+					if ( strpos( $zpr["item_key"], ',' ) )
       				{
       					$zpr_temp = explode(',', $zpr["item_key"]);
       					$zpr["item_key"] = rtrim( $zpr_temp[0], "}" );
       				}
-      }
-	    } // item type Items
+      			}
+	    	} // item type Items
 
-		// Top
-		if ( $zpr["get_top"] ) $zp_import_url .= "/top";
+			// Top
+			if ( $zpr["get_top"] ) $zp_import_url .= "/top";
 
-		// Single item key
-		if ( ! empty( $zp_request_queue )
-	            && ( ! isset( $zp_request_queue[$api_user_id]["items"] )
-					|| strpos($zp_request_queue[$api_user_id]["items"], ',') == false )
-			)
-	    {
-			if (isset( $zp_request_data["items"] )) {
-       $zp_import_url .= "/" . $zp_request_data["items"];
-   } elseif (gettype( $zpr["item_key"] ) == "array"
-					&& count( $zpr["item_key"] ) == 1
-					&& strpos( $zpr["item_key"][0], ',' ) == false) {
-       $zp_import_url .= "/" . $zpr["item_key"][0];
-   } elseif (gettype( $zpr["item_key"] ) == "string"
-					&& ( strpos( $zpr["item_key"], "," ) === false
-				 		&& strpos( $zpr["item_key"], ";" ) === false )) {
-       $zp_import_url .= "/" . $zpr["item_key"];
-   }
-	    }
-		if ( $zpr["collection_id"] ) $zp_import_url .= "/" . $zpr["collection_id"];
-		if ( $zpr["sub"] ) $zp_import_url .= "/" . $zpr["sub"];
-		$zp_import_url .= "?";
+			// Single item key
+			if ( ! empty( $zp_request_queue )
+					&& ( ! isset( $zp_request_queue[$api_user_id]["items"] )
+						|| strpos($zp_request_queue[$api_user_id]["items"], ',') == false )
+				)
+			{
+				if (isset( $zp_request_data["items"] )) {
+					$zp_import_url .= "/" . $zp_request_data["items"];
+				} elseif (gettype( $zpr["item_key"] ) == "array"
+						&& count( $zpr["item_key"] ) == 1
+						&& strpos( $zpr["item_key"][0], ',' ) == false) {
+					$zp_import_url .= "/" . $zpr["item_key"][0];
+				} elseif (gettype( $zpr["item_key"] ) == "string"
+						&& ( strpos( $zpr["item_key"], "," ) === false
+						&& strpos( $zpr["item_key"], ";" ) === false )) {
+					$zp_import_url .= "/" . $zpr["item_key"];
+				}
+	    	}
+			if ( $zpr["collection_id"] ) $zp_import_url .= "/" . $zpr["collection_id"];
+			if ( $zpr["sub"] ) $zp_import_url .= "/" . $zpr["sub"];
+			
+			$zp_import_url .= "?";
 
-		// Public key, if needed
-		if (!is_null($zp_account[0]->public_key) && trim($zp_account[0]->public_key) != "")
-			$zp_import_url .= "key=".$zp_account[0]->public_key."&";
+			// Public key, if needed
+			if (!is_null($zp_account[0]->public_key) && trim($zp_account[0]->public_key) != "")
+				$zp_import_url .= "key=".$zp_account[0]->public_key."&";
 
-		// Style
-		$zp_import_url .= "style=".$zpr["style"];
+			// Style
+			$zp_import_url .= "style=".$zpr["style"];
 
-		// Format, limit, etc.
-		$zp_import_url .= "&format=json&include=data,bib&limit=".$zpr["limit"];
+			// Format, limit, etc.
+			$zp_import_url .= "&format=json&include=data,bib&limit=".$zpr["limit"];
 
-		// Sort and order
-		if ( $zpr["sortby"] && $zpr["sortby"] != "default" )
-		{
-			$zp_import_url .= "&sort=".$zpr["sortby"];
-			if ( $zpr["order"] ) $zp_import_url .= "&direction=".$zpr["order"];
-		}
+			// Sort and order
+			if ( $zpr["sortby"] && $zpr["sortby"] != "default" )
+			{
+				$zp_import_url .= "&sort=".$zpr["sortby"];
+				if ( $zpr["order"] ) $zp_import_url .= "&direction=".$zpr["order"];
+			}
 
-		// Start if multiple
-		if ( $zpr["request_start"] != 0 ) $zp_import_url .= "&start=".$zpr["request_start"];
+			// Start if multiple
+			if ( $zpr["request_start"] != 0 ) $zp_import_url .= "&start=".$zpr["request_start"];
 
 		// Multiple item keys
 		// EVENTUAL TODO: Limited to 50 item keys at a time ... can I get around this?
@@ -641,94 +646,97 @@ function Zotpress_prep_request_URL( $wpdb, $zpr, $zp_request_queue, $api_user_id
 		$zp_author_or_year_multiple = false;
 
 		if ($zpr["collection_id"] || $zpr["tag_id"]) {
-      // Check if author or year is set
-      if ( $zpr["year"] || $zpr["author"] )
-   			{
-   				// Check if author year is set and multiple
-   				if ( ( $zpr["author"] && strpos( $zpr["author"], "," ) !== false )
-   						|| ( $zpr["year"] && strpos( $zpr["year"], "," ) !== false ) )
-   				{
-   					$zp_author_or_year_multiple = $zpr["author"] && strpos( $zpr["author"], "," ) !== false ? "author" : "year";
-   				}
-   				else // Set but not multiple
-   				{
-   					$zp_import_url .= "&qmode=titleCreatorYear";
-   					if ( $zpr["author"] ) $zp_import_url .= "&q=".urlencode( $zpr["author"] );
-   					if ( $zpr["year"] && ! $zpr["author"] ) $zp_import_url .= "&q=".$zpr["year"];
-   				}
-   			}
-  } elseif ($zpr["year"] || $zpr["author"]) {
-      $zp_import_url .= "&qmode=titleCreatorYear";
-      if ( $zpr["author"] )
-  				{
-  					// REVIEW: Deal with authors with multi-part last names
-  					// Replace plus signs with spaces
-  					if ( strpos( $zpr["author"], "+" ) !== -1 )
-  						$zpr["author"] = str_replace( '+', ' ', $zpr["author"] );
 
-  					if ( $zpr["inclusive"] === false )
-  					{
-  						$zp_authors = explode( ",", $zpr["author"] );
-  						$zp_import_url .= "&q=".urlencode( $zp_authors[0] );
-  						unset( $zp_authors[0] );
-  						$zpr["author"] = $zp_authors;
-  					}
-  					else // inclusive
-  					{
-  						$zp_import_url .= "&q=".urlencode( $zpr["author"] );
-  					}
-  				}
-      // CHANGED (7.3): For some reason, urlencode will replace apostrophes
-      // with &#039; and then encode that to %26%23039%3B
-      // which breaks ... so let's replace with %27 manually
-      $zp_import_url = str_replace("%26%23039%3B", "%27", $zp_import_url);
-      // Deal with just year, no author
-      if ( $zpr["year"] && ! $zpr["author"] ) $zp_import_url .= "&q=".$zpr["year"];
-  }
+			// Check if author or year is set
+			if ( $zpr["year"] || $zpr["author"] )
+			{
+				// Check if author year is set and multiple
+				if ( ( $zpr["author"] && strpos( $zpr["author"], "," ) !== false )
+						|| ( $zpr["year"] && strpos( $zpr["year"], "," ) !== false ) )
+				{
+					$zp_author_or_year_multiple = $zpr["author"] && strpos( $zpr["author"], "," ) !== false ? "author" : "year";
+				}
+				else // Set but not multiple
+				{
+					$zp_import_url .= "&qmode=titleCreatorYear";
+					if ( $zpr["author"] ) $zp_import_url .= "&q=".urlencode( $zpr["author"] );
+					if ( $zpr["year"] && ! $zpr["author"] ) $zp_import_url .= "&q=".$zpr["year"];
+				}
+			}
 
-		// Avoid attachments and notes, if not using itemtype filtering
-		if ( ! $zpr["itemtype"]
-				&& $zpr["item_type"] == "items"
-				|| ( $zpr["sub"] && $zpr["sub"] == "items" ) )
-			$zp_import_url .= "&itemType=-attachment+||+note";
+		} elseif ($zpr["year"] || $zpr["author"]) {
 
-		// Deal with possible term
-		if ( $zpr["term"] )
-			if ( $zpr["filter"] && $zpr["filter"] == "tag")
-				$zp_import_url .= "&tag=".urlencode( $wpdb->esc_like($zpr["term"]) );
-			else
-				$zp_import_url .= "&q=".urlencode( $wpdb->esc_like($zpr["term"]) );
+			$zp_import_url .= "&qmode=titleCreatorYear";
+			if ( $zpr["author"] )
+			{
+			// REVIEW: Deal with authors with multi-part last names
+			// Replace plus signs with spaces
+			if ( strpos( $zpr["author"], "+" ) !== -1 )
+				$zpr["author"] = str_replace( '+', ' ', $zpr["author"] );
+
+			if ( $zpr["inclusive"] === false )
+			{
+				$zp_authors = explode( ",", $zpr["author"] );
+				$zp_import_url .= "&q=".urlencode( $zp_authors[0] );
+				unset( $zp_authors[0] );
+				$zpr["author"] = $zp_authors;
+			}
+			else // inclusive
+			{
+				$zp_import_url .= "&q=".urlencode( $zpr["author"] );
+			}
+		}
+		// CHANGED (7.3): For some reason, urlencode will replace apostrophes
+		// with &#039; and then encode that to %26%23039%3B
+		// which breaks ... so let's replace with %27 manually
+		$zp_import_url = str_replace("%26%23039%3B", "%27", $zp_import_url);
+		// Deal with just year, no author
+		if ( $zpr["year"] && ! $zpr["author"] ) $zp_import_url .= "&q=".$zpr["year"];
+	}
+
+	// Avoid attachments and notes, if not using itemtype filtering
+	if ( ! $zpr["itemtype"]
+			&& $zpr["item_type"] == "items"
+			|| ( $zpr["sub"] && $zpr["sub"] == "items" ) )
+		$zp_import_url .= "&itemType=-attachment+||+note";
+
+	// Deal with possible term
+	if ( $zpr["term"] )
+		if ( $zpr["filter"] && $zpr["filter"] == "tag")
+			$zp_import_url .= "&tag=".urlencode( $wpdb->esc_like($zpr["term"]) );
+		else
+			$zp_import_url .= "&q=".urlencode( $wpdb->esc_like($zpr["term"]) );
 
 
-		// DEAL WITH MULTIPLE REQUESTS
-		// if ( count($zp_request_queue) > 0 )
-		if ($zp_request_queue
-				&& array_key_exists($api_user_id, $zp_request_queue)) {
-      // Assume items
-      // if ( array_key_exists("requests", $zp_request_queue[$api_user_id])
-      // 		&& count($zp_request_queue[$api_user_id]["requests"]) > 1 )
-      // Multiple requests
-      if (array_key_exists("requests", $zp_request_queue[$api_user_id])
+	// DEAL WITH MULTIPLE REQUESTS
+	// if ( count($zp_request_queue) > 0 )
+	if ($zp_request_queue
+			&& array_key_exists($api_user_id, $zp_request_queue)) {
+		// Assume items
+		// if ( array_key_exists("requests", $zp_request_queue[$api_user_id])
+		// 		&& count($zp_request_queue[$api_user_id]["requests"]) > 1 )
+		// Multiple requests
+		if (array_key_exists("requests", $zp_request_queue[$api_user_id])
    					&& count($zp_request_queue[$api_user_id]["requests"]) > 1) {
-          $item_keys = "";
-          foreach ( $zp_request_queue[$api_user_id]["requests"] as $num => $request ) {
-      					if ( $item_keys != "" ) $item_keys .= ",";
-      					$item_keys .= $request;
-      				}
+          	$item_keys = "";
+          	foreach ( $zp_request_queue[$api_user_id]["requests"] as $num => $request ) {
+				if ( $item_keys != "" ) $item_keys .= ",";
+				$item_keys .= $request;
+			}
           $zp_request_queue[$api_user_id]["requests"][$num] = $zp_import_url . "&itemKey=" . $item_keys;
-      } elseif (strpos( $zp_request_queue[$api_user_id]["items"], "," ) !== false) {
-          if ( is_array($zp_request_queue[$api_user_id]["items"]) )
+      	} elseif (strpos( $zp_request_queue[$api_user_id]["items"], "," ) !== false) {
+          	if ( is_array($zp_request_queue[$api_user_id]["items"]) )
      						$zp_request_queue[$api_user_id]["items"] = implode(",", $zp_request_queue[$api_user_id]["items"]);
-          $zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url . "&itemKey=" . $zp_request_queue[$api_user_id]["items"] );
-      } else // one item
+          	$zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url . "&itemKey=" . $zp_request_queue[$api_user_id]["items"] );
+      	} else // one item
   				{
   					$zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url );
   				}
-  } elseif (! $zp_request_queue
-				&& $api_user_id) {
-      // Assume normal
-      $zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url );
-  } else
+		} elseif (! $zp_request_queue
+						&& $api_user_id) {
+			// Assume normal
+			$zp_request_queue[$api_user_id]["requests"] = array( $zp_import_url );
+		} else
 		{
 			// Assume broken or no requests
 			$zp_request_queue = false;

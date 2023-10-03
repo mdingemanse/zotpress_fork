@@ -8,10 +8,11 @@ jQuery(document).ready(function()
      ****************************************************************************************/
 
 	// TODO: notes, abstract, target
-	// TODO: Always updates rather than checking the cache ... don't see an easy way around this ...
+	// TODO: After updating, not sure why it doesn't update the list right away
 
 	if ( jQuery(".zp-Zotpress-SearchBox").length > 0 )
 	{
+		var zp_totalItems = 0;
 		var zpItemsFlag = true;
 		var zpItemNum = 1;
 		var zpLastTerm = "";
@@ -19,6 +20,7 @@ jQuery(document).ready(function()
 		var zpSearchBarSource = zpShortcodeAJAX.ajaxurl + "?action=zpRetrieveViaShortcode&zpShortcode_nonce="+zpShortcodeAJAX.zpShortcode_nonce;
 		var zpShowTags = false; if ( jQuery(".ZP_SHOWTAGS").length > 0 && parseInt( jQuery(".ZP_SHOWTAGS").text() ) == "1" ) zpShowTags = true;
 		var zpShowImages = false; if ( jQuery(".ZOTPRESS_AC_IMAGES").length > 0 ) zpShowImages = true;
+		var zpUpdateNeeded = false; if ( jQuery(".ZP_UPDATENEEDED").text().trim().length > 0 && jQuery(".ZP_UPDATENEEDED").text() == "true" ) zpUpdateNeeded = true;
 
 
 
@@ -57,9 +59,9 @@ jQuery(document).ready(function()
 			if ( start ) zpSearchBarParams += "&request_start="+start;
 			if ( last ) zpSearchBarParams += "&request_last="+last;
 
-			// Deal with update:
-			// Always checks for new rather than cached ... is there an uncomplicated way around this?
+			// Deal with updating:
 			zpSearchBarParams += "&update=true";
+			zpSearchBarParams += "&request_update="+zpUpdateNeeded;
 
 			// Deal with possible filters
 			if ( filter )
@@ -111,6 +113,12 @@ jQuery(document).ready(function()
 			})
 			.bind( "blur", function( event )
 			{
+				// Don't search if the term doesn't change
+				if ( jQuery.trim(jQuery(this).val()) == zpLastTerm )
+					jQuery(this).attr('autocomplete', 'off');
+				else
+					jQuery(this).attr('autocomplete', 'on');
+
 				// Add help text on blur, if nothing there
 				if (jQuery.trim(jQuery(this).val()) == "") {
 					jQuery(this).val(zpShortcodeAJAX.txt_typetosearch);
@@ -126,14 +134,40 @@ jQuery(document).ready(function()
 				},
 				search: function( event, ui )
 				{
-					var tempCurrentTerm = false; if ( event.hasOwnProperty('currentTarget') ) tempCurrentTerm = event.currentTarget.value;
+					// var tempCurrentTerm = false; if ( event.hasOwnProperty('currentTarget') ) tempCurrentTerm = event.currentTarget.value;
+					var tempCurrentTerm = jQuery(this).val(); if ( event.hasOwnProperty('currentTarget') ) tempCurrentTerm = event.currentTarget.value;
+
+					// Check if update needed:
+					jQuery.ajax({
+						// url: zpShortcodeAJAX.ajaxurl,
+						url: zpSearchBarSource+zpSearchBarParams+"&term="+tempCurrentTerm,
+						ifModified: true,
+						xhrFields: {
+							withCredentials: true
+						},
+						success: function(data)
+						{
+							var zp_items = jQuery.parseJSON( data );
+			
+							if ( zp_items.updateneeded )
+								zpUpdateNeeded = zp_items.updateneeded;
+						
+							console.log('zp: calling zp_get_items with update check?', 'always');
+							console.log('zp: is an update needed?', zpUpdateNeeded);			
+						},
+						error: function(errorThrown)
+						{
+							console.log("zp: Zotpress via WP AJAX Error: ", errorThrown);
+						}
+					});
+
 
 					// Reset item numbering
 					zpItemNum = 1;
 
-					if ( zpItemsFlag == true
-						|| ( tempCurrentTerm && tempCurrentTerm != zpLastTerm ) )
-					{
+					// if ( zpItemsFlag == true
+					// 	|| ( tempCurrentTerm && tempCurrentTerm != zpLastTerm ) )
+					// {
 						// Show loading icon
 						jQuery(".zp-List .zpSearchLoading").addClass("show");
 
@@ -155,7 +189,8 @@ jQuery(document).ready(function()
 
 						if ( zpItemsFlag == true && tempCurrentTerm )
 							zpLastTerm = tempCurrentTerm;
-					}
+					// }
+
 				},
 				response: function( event, ui )
 				{
@@ -164,7 +199,7 @@ jQuery(document).ready(function()
 
 					// First, deal with any errors or blank results
 					if ( ui.content == "0"
-				 			|| ui.content[0].label == "empty" )
+							|| ui.content[0].label == "empty" )
 					{
 						if ( jQuery(".zpSearchResultsPaging").length > 0 ) {
 							jQuery(".zpSearchResultsPaging").empty();
@@ -172,53 +207,23 @@ jQuery(document).ready(function()
 						}
 						jQuery(".zpSearchResultsContainer").append("<p>No items found.</p>\n");
 					}
-					else // Display list of search results
+
+					// Display list of search results
+					else
 					{
-						jQuery.each(ui.content[3], function( index, item )
-						{
-							var tempItem = "<div id='zp-Entry-"+item.key+"' class='zp-Entry zpSearchResultsItem hidden'>\n";
-
-							if ( zpShowImages
-									&& item.hasOwnProperty('image') )
-							{
-								tempItem += "<div id='zp-Citation-"+item.key+"' class='zp-Entry-Image hasImage' rel='"+item.key+"'>\n";
-								tempItem += "<img class='thumb' src='"+item.image[0]+"' alt='image' />\n";
-								tempItem += "</div><!-- .zp-Entry-Image -->\n";
-							}
-
-							// Replace num due to style
-							if ( item.bib.indexOf("[1]") != -1 )
-							{
-								item.bib = item.bib.replace("[1]", "["+zpItemNum+"]");
-								zpItemNum++;
-							}
-
-							// Bibliography entry
-							tempItem += item.bib;
-
-							if ( ( zpShowTags
-									|| jQuery("input.tag[name=zpSearchFilters]:checked").length > 0 )
-									&& item.data.tags.length > 0 )
-							{
-								tempItem += "<span class='item_key'>Tag(s): ";
-								// console.log(item);
-
-								jQuery.each( item.data.tags, function ( tindex, tagval )
-								{
-									if ( tindex != 0 ) tempItem += ", ";
-									tempItem += tagval.tag;
-								});
-							}
-
-							jQuery(".zpSearchResultsContainer").append(tempItem+"</div><!-- .zp-Entry -->\n");
-
-							jQuery(".zpSearchResultsPagingContainer").show();
-						});
-
+						// NEW in 7.3.6: Why is it [4] instead of [3] now?
+						var zp_items = ui.content[4];
+	
+						zp_totalItems += zp_items.length;
+						// if ( update ) console.log("zp: running update for items:",zp_totalItems,"->",zp_items.length);
+						// else console.log("zp: adding items:",zp_totalItems,"->",zp_items.length);
+		
+						zp_format_intext_results(zp_items, zpShowTags, zpItemNum);
 
 						// Then, continue with other requests, if they exist
-						if ( ui.content[2].request_next != false
-								&& ui.content[2].request_next != "false" )
+						// NEW in 7.3.6: Why is it [3] instead of [2] now?
+						if ( ui.content[3].request_next != false
+								&& ui.content[3].request_next != "false" )
 						{
 							if ( zpItemsFlag == true )
 								// window.zpACPagination(zpItemsFlag, false);
@@ -228,16 +233,76 @@ jQuery(document).ready(function()
 								window.zpBrowseList[0].paginate(zpItemsFlag, true);
 							zpItemsFlag = false;
 
-							zp_set_lib_searchbar_params( false, ui.content[2].request_next, ui.content[2].request_last );
+							zp_set_lib_searchbar_params( false, ui.content[3].request_next, ui.content[3].request_last );
 
 							jQuery("input.zp-Zotpress-SearchBox-Input").autocomplete( "option", "source", zpSearchBarSource+zpSearchBarParams );
 							jQuery("input.zp-Zotpress-SearchBox-Input").autocomplete("search");
 						}
 						else
 						{
-							// window.zpACPagination(zpItemsFlag, true);
-							window.zpBrowseList[0].paginate(zpItemsFlag, true);
-							zpItemsFlag = false;
+							// // Check for updates, if needed:
+							if ( zpUpdateNeeded )
+							{
+								console.log("zp: update needed");
+
+								// Add loading icon
+								jQuery(".zp-List .zpSearchLoading").addClass("show");
+
+								jQuery.ajax({
+									url: zpSearchBarSource+zpSearchBarParams.replace("request_update=false", "request_update=true")+"&term="+zpLastTerm,
+									ifModified: true,
+									xhrFields: {
+										withCredentials: true
+									},
+									success: function(data)
+									{
+										var zp_items = jQuery.parseJSON( data );
+						
+										if ( zp_items.updateneeded )
+											zpUpdateNeeded = zp_items.updateneeded;
+									
+										console.log('zp: calling zp_get_items with update check?', 'always');
+										console.log('zp: is an update needed?', zpUpdateNeeded);
+
+										// Empty and hide pagination
+										if ( jQuery(".zpSearchResultsPaging").length > 0 ) {
+											jQuery(".zpSearchResultsPaging").empty();
+											jQuery(".zpSearchResultsPagingContainer").hide();
+										}
+
+										// Remove old results
+										jQuery(".zpSearchResultsContainer").empty();
+
+										// Format and add new results
+										zp_format_intext_results(zp_items.data, zpShowTags, zpItemNum);
+										
+										// Reset the query
+										// zp_set_lib_searchbar_params( false, 0, false );
+										// jQuery("input.zp-Zotpress-SearchBox-Input").autocomplete( "option", "source", zpSearchBarSource+zpSearchBarParams );
+
+										// Reset the current pagination
+										window.zpPage = 1;
+
+										window.zpBrowseList[0].paginate(zpItemsFlag, true);
+										zpItemsFlag = false;
+		
+										zpUpdateNeeded = false;
+
+										// Remove loading icon
+										jQuery(".zp-List .zpSearchLoading").removeClass("show");
+									},
+									error: function(errorThrown)
+									{
+										console.log("zp: Zotpress via WP AJAX Error: ", errorThrown);
+									}
+								});
+							}
+							else
+							{
+								// window.zpACPagination(zpItemsFlag, true);
+								window.zpBrowseList[0].paginate(zpItemsFlag, true);
+								zpItemsFlag = false;
+							}
 						}
 					}
 				},
@@ -249,5 +314,49 @@ jQuery(document).ready(function()
 			});
 
 	} // Zotpress SearchBar Library
+
+
+	function zp_format_intext_results(zp_items, zpShowTags, zpItemNum)
+	{
+		jQuery.each( zp_items, function( index, item )
+		{
+			var tempItem = "<div id='zp-Entry-"+item.key+"' class='zp-Entry zpSearchResultsItem hidden'>\n";
+
+			if ( zpShowImages
+					&& item.hasOwnProperty('image') )
+			{
+				tempItem += "<div id='zp-Citation-"+item.key+"' class='zp-Entry-Image hasImage' rel='"+item.key+"'>\n";
+				tempItem += "<img class='thumb' src='"+item.image[0]+"' alt='image' />\n";
+				tempItem += "</div><!-- .zp-Entry-Image -->\n";
+			}
+
+			// Replace num due to style
+			if ( item.bib.indexOf("[1]") != -1 )
+			{
+				item.bib = item.bib.replace("[1]", "["+zpItemNum+"]");
+				zpItemNum++;
+			}
+
+			// Bibliography entry
+			tempItem += item.bib;
+
+			if ( ( zpShowTags
+					|| jQuery("input.tag[name=zpSearchFilters]:checked").length > 0 )
+					&& item.data.tags.length > 0 )
+			{
+				tempItem += "<span class='item_key'>Tag(s): ";
+
+				jQuery.each( item.data.tags, function ( tindex, tagval )
+				{
+					if ( tindex != 0 ) tempItem += ", ";
+					tempItem += tagval.tag;
+				});
+			}
+
+			jQuery(".zpSearchResultsContainer").append(tempItem+"</div><!-- .zp-Entry -->\n");
+
+			jQuery(".zpSearchResultsPagingContainer").show();
+		});
+	} // zp_format_intext_results()
 
 });

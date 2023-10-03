@@ -186,7 +186,7 @@ a.zp-DownloadURL:after {
 }
 
 .zpSearchResultsItem.hidden {
-    display: none;
+    display: none !important;
 }
 
 .zp-Zotpress-SearchBox-Input {

@@ -1,6 +1,8 @@
             <h3><?php _e('Add a Zotero Account','zotpress'); ?></h3>
 
-            <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" id="zp-Add" name="zp-Add">
+            <?php $phpSelf = htmlspecialchars($_SERVER["PHP_SELF"], ENT_QUOTES, "utf-8"); ?>
+
+            <form action="<?php echo $phpSelf; /* $_SERVER['PHP_SELF']; */ ?>" method="post" id="zp-Add" name="zp-Add">
 
                 <fieldset>
                     <input class="ZOTPRESS_PLUGIN_URL" name="ZOTPRESS_PLUGIN_URL" type="hidden" value="<?php echo ZOTPRESS_PLUGIN_URL; ?>" />
@@ -15,7 +17,7 @@
 
                     <div class="field">
                         <label for="api_user_id" class="required" title="<?php _e('API User ID','zotpress'); ?>"><?php _e('API User ID','zotpress'); ?></label>
-                        <input id="api_user_id" name="api_user_id" type="text" tabindex="2" />
+                        <input id="api_user_id" name="api_user_id" type="text" tabindex="2">
 						<aside>
 							<p>
                                 <?php echo sprintf(
