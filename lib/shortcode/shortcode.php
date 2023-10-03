@@ -146,7 +146,8 @@ function Zotpress_func( $atts )
             'tvBroadcast',
             'videoRecording',
             'attachment',
-            'note'
+            'note',
+            'preprint'
         );
 
         $itemtypeCheck = false;
@@ -166,6 +167,7 @@ function Zotpress_func( $atts )
     } else $item_type = zp_clean_param( $datatype );
 
     // Filter by collection
+    $collection_id = false;
     if ($collection_id) {
         $collection_id = zp_clean_param( $collection_id );
     } elseif ($collection) {
@@ -179,6 +181,7 @@ function Zotpress_func( $atts )
     if ($item_type == "collections" && isset($_GET['zpcollection']) ) $collection_id = htmlentities( urldecode( $_GET['zpcollection'] ) );
 
     // Filter by tag
+    $tag_id = false;
     if ($tag_name) {
         $tag_id = zp_clean_param( $tag_name );
     } elseif ($tags) {
@@ -204,7 +207,7 @@ function Zotpress_func( $atts )
     $style = zp_clean_param( $style );
 
     // Limit
-    $limit = zp_clean_param( $limit );
+    $limit = (int) zp_clean_param( $limit );
 
     // Order / sort
     $sortby = zp_clean_param( $sortby );
@@ -287,6 +290,7 @@ function Zotpress_func( $atts )
     // +-------------+
 
     global $wpdb;
+    global $post;
 
     // Turn on/off minified versions if testing/live
     $minify = ''; if ( ZOTPRESS_LIVEMODE ) $minify = '.min';
@@ -330,14 +334,13 @@ function Zotpress_func( $atts )
 	$temp_sortby = is_array( $sortby ) ? implode( "-", $sortby) : $sortby;
 
     // REVIEW: Added post ID
-    $instance_id = "zotpress-".md5(get_the_ID().$api_user_id.$nickname.$temp_author.$temp_year.$itemtype.$item_type.$temp_collection_id.$temp_item_key.$temp_tag_name.$style.$temp_sortby.$order.$limit.$showimage.$showtags.$downloadable.$shownotes.$citeable.$inclusive);
+    $instance_id = "zotpress-".md5($post->ID.$api_user_id.$nickname.$temp_author.$temp_year.$itemtype.$item_type.$temp_collection_id.$temp_item_key.$temp_tag_name.$style.$temp_sortby.$order.$limit.$showimage.$showtags.$downloadable.$shownotes.$citeable.$inclusive);
 
 	// Prepare item key
 	if ( $item_key && gettype( $item_key ) != "string" ) $item_key = implode( ",", $item_key );
 
 	// Prepare collection
 	if ( $collection_id && gettype( $collection_id ) != "string" ) $collection_id = implode( ",", $collection_id );
-
 	// Prepare tags
 	if ( $tag_id && gettype( $tag_id ) != "string" ) $tag_id = implode( ",", $tag_id );
 
@@ -387,6 +390,7 @@ function Zotpress_func( $atts )
 		<span class="ZP_URLWRAP" style="display: none;">'.$urlwrap.'</span>
 		<span class="ZP_FORCENUM" style="display: none;">'.$forcenumber.'</span>
         <span class="ZP_HIGHLIGHT" style="display: none;">'.$highlight.'</span>
+        <span class="ZP_POSTID" style="display: none;">'.$post->ID.'</span>
 		<span class="ZOTPRESS_PLUGIN_URL" style="display:none;">'.ZOTPRESS_PLUGIN_URL.'</span>
 
 		<div class="zp-List loading">';
@@ -437,9 +441,9 @@ function Zotpress_func( $atts )
         $_GET['update'] = $update;
         $_GET['overwrite_last_request'] = $overwrite_last_request;
 
-        $zp_output .= "\n<div class=\"zp-SEO-Content\">";
+        $zp_output .= "\n\t\t\t<div class=\"zp-SEO-Content\">\n";
         $zp_output .= Zotpress_shortcode_request( true ); // Check catche first
-        $zp_output .= "</div><!-- .zp-zp-SEO-Content -->\n";
+        $zp_output .= "\n\t\t\t</div><!-- .zp-zp-SEO-Content -->\n";
     }
 
 
@@ -447,7 +451,7 @@ function Zotpress_func( $atts )
 
 	$GLOBALS['zp_is_shortcode_displayed'] = true;
 
-	return $zp_output . "</div><!-- .zp-List --></div><!--.zp-Zotpress-->\n\n";
+	return $zp_output . "\t\t</div><!-- .zp-List -->\n\t</div><!--.zp-Zotpress-->\n\n";
 }
 
 ?>

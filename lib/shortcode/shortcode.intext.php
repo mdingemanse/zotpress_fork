@@ -37,34 +37,34 @@ function Zotpress_zotpressInText ($atts)
 
 
     // PREPARE ATTRIBUTES
-    if ($items) {
+    if ($items)
         $items = zpStripQuotes( str_replace(" ", "", $items ));
-    } elseif ($item) {
+    elseif ($item)
         $items = zpStripQuotes( str_replace(" ", "", $item ));
-    }
 
-    $pages =              zpStripQuotes( $pages );
-    $format =             zpStripQuotes( $format );
-    $brackets =           zpStripQuotes( $brackets );
+    $pages = zpStripQuotes( $pages );
+    $format = zpStripQuotes( $format );
+    $brackets = zpStripQuotes( $brackets );
 
-    $etal =               zpStripQuotes( $etal );
+    $etal = zpStripQuotes( $etal );
     if ( $etal == "default" ) $etal = false;
 
-    $separator =          zpStripQuotes( $separator );
+    $separator = zpStripQuotes( $separator );
     if ( $separator == "default" ) $separator = false;
 
-    $and =                zpStripQuotes( $and );
+    $and = zpStripQuotes( $and );
     if ( $and == "default" ) $and = false;
 
-    if ( $userid )        $api_user_id = zpStripQuotes( $userid );
-    if ( $nickname )      $nickname = zpStripQuotes( $nickname );
-    if ( $nick )          $nickname = zpStripQuotes( $nick );
+    if ( $userid ) $api_user_id = zpStripQuotes( $userid );
+    if ( $nickname ) $nickname = zpStripQuotes( $nickname );
+    if ( $nick ) $nickname = zpStripQuotes( $nick );
 
 
 
     // GET ACCOUNTS
 
     global $wpdb;
+    global $post;
 
     // Turn on/off minified versions if testing/live
     $minify = ''; if ( ZOTPRESS_LIVEMODE ) $minify = '.min';
@@ -159,12 +159,12 @@ function Zotpress_zotpressInText ($atts)
     // Generate instance id for shortcode
     // REVIEW: Changed for new item format
     // e.g., zp-ID--66010-FKNL6ECC-_-66010-FZF9BN8L--wp406
-    // $instance_id = "zp-ID-".$api_user_id."-" . str_replace( " ", "_", str_replace( "&", "_", str_replace( "+", "_", str_replace( "/", "_", str_replace( "{", "-", str_replace( "}", "-", str_replace( ",", "_", $items ) ) ) ) ) ) ) ."-".get_the_ID();
-    $instance_id = "zp-InText-zp-ID-" . str_replace( " ", "_", str_replace( "&", "_", str_replace( "+", "_", str_replace( "/", "_", str_replace( "{", "-", str_replace( "}", "-", str_replace( ":", "-", str_replace( ",", "_", $items ) ) ) ) ) ) ) ) ."-wp".get_the_ID();
+    // $instance_id = "zp-ID-".$api_user_id."-" . str_replace( " ", "_", str_replace( "&", "_", str_replace( "+", "_", str_replace( "/", "_", str_replace( "{", "-", str_replace( "}", "-", str_replace( ",", "_", $items ) ) ) ) ) ) ) ."-".$post->ID;
+    $instance_id = "zp-InText-zp-ID-" . str_replace( " ", "_", str_replace( "&", "_", str_replace( "+", "_", str_replace( "/", "_", str_replace( "{", "-", str_replace( "}", "-", str_replace( ":", "-", str_replace( ",", "_", $items ) ) ) ) ) ) ) ) ."-wp".$post->ID;
 
     // Set up array for this post, if it doesn't exist
-	if ( ! isset( $GLOBALS['zp_shortcode_instances'][get_the_ID()] ) )
-		$GLOBALS['zp_shortcode_instances'][get_the_ID()] = array();
+	if ( ! isset( $GLOBALS['zp_shortcode_instances'][$post->ID] ) )
+		$GLOBALS['zp_shortcode_instances'][$post->ID] = array();
 
     // Determine if all items are np
     if ( $all_np )
@@ -172,8 +172,8 @@ function Zotpress_zotpressInText ($atts)
 
     // Then, add the instance to the array
     // REVIEW: Don't need api_user_id ... or maybe need multiple?
-    // $GLOBALS['zp_shortcode_instances'][get_the_ID()][] = array( "instance_id" => $instance_id, "api_user_id" =>$api_user_id, "items" => $items );
-    $GLOBALS['zp_shortcode_instances'][get_the_ID()][] = array(
+    // $GLOBALS['zp_shortcode_instances'][$post->ID][] = array( "instance_id" => $instance_id, "api_user_id" =>$api_user_id, "items" => $items );
+    $GLOBALS['zp_shortcode_instances'][$post->ID][] = array(
         "instance_id" => $instance_id,
         "items" => $items,
         "page_instances" => $all_page_instances
@@ -184,7 +184,7 @@ function Zotpress_zotpressInText ($atts)
 
 	// Output attributes and loading
     // REVIEW: Changed for new format
-    // return '<span id="zp-InText-'.$instance_id."-".count($GLOBALS['zp_shortcode_instances'][get_the_ID()]).'"
+    // return '<span id="zp-InText-'.$instance_id."-".count($GLOBALS['zp_shortcode_instances'][$post->ID]).'"
 	// 				class="zp-InText-Citation loading"
 	// 				rel="{ \'api_user_id\': \''.$api_user_id.'\', \'pages\': \''.$pages.'\', \'items\': \''.$items.'\', \'format\': \''.$format.'\', \'brackets\': \''.$brackets.'\', \'etal\': \''.$etal.'\', \'separator\': \''.$separator.'\', \'and\': \''.$and.'\' }"></span>';
     $output = '<span class="'.$instance_id.' zp-InText-Citation loading" rel="{ \'pages\': \''.implode("--", $all_page_instances).'\', \'items\': \''.$items.'\', \'format\': \''.$format.'\', \'brackets\': \''.$brackets.'\', \'etal\': \''.$etal.'\', \'separator\': \''.$separator.'\', \'and\': \''.$and.'\' }"></span>';

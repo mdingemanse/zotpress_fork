@@ -29,9 +29,6 @@ jQuery(document).ready(function()
 				if ( jQuery("#wpadminbar").length > 0 )
 					t_offset = jQuery("#wpadminbar").height();
 
-				// jQuery([document.documentElement, document.body]).animate({
-				// 	scrollTop: jQuery('a[name="'+$thisLib.attr('id')+'"]').offset().top - t_offset
-				// }, 500);
 				jQuery([document.documentElement, document.body]).scrollTop(
 					jQuery('a[name="'+$thisLib.attr('id')+'"]').offset().top - t_offset
 				);
