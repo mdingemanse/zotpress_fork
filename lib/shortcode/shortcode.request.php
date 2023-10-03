@@ -639,7 +639,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 					{
          				$item->bib = str_ireplace(
    								"doi:" . $item->data->DOI,
-   								"<a ".$zp_target_output."href='http://doi.org/".$item->data->DOI."'>http://doi.org/".$item->data->DOI."</a>",
+   								"<a class='zp-doi-link' ".$zp_target_output."href='https://doi.org/".$item->data->DOI."'>".$item->data->DOI."</a>",
    								$item->bib
    							);
      				}
@@ -649,7 +649,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 					{
          				$item->bib = str_ireplace(
    								"http://doi.org/" . $item->data->DOI,
-   								"<a ".$zp_target_output."href='http://doi.org/".$item->data->DOI."'>http://doi.org/".$item->data->DOI."</a>",
+   								"doi: <a class='zp-doi-link' ".$zp_target_output."href='https://doi.org/".$item->data->DOI."'>".$item->data->DOI."</a>",
    								$item->bib
    							);
 					}
@@ -659,7 +659,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 					{
          				$item->bib = str_ireplace(
    								"https://doi.org/" . $item->data->DOI,
-   								"<a ".$zp_target_output."href='https://doi.org/".$item->data->DOI."'>https://doi.org/".$item->data->DOI."</a>",
+   								"doi: <a class='zp-doi-link' ".$zp_target_output."href='https://doi.org/".$item->data->DOI."'>".$item->data->DOI."</a>",
    								$item->bib
    							);
  					}
