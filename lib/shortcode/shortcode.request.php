@@ -676,7 +676,7 @@ function Zotpress_shortcode_request( $checkcache = false )
 					{
          				$item->bib = str_ireplace(
    								"http://doi.org/" . $item->data->DOI,
-   								"doi: <a class='zp-doi-link' ".$zp_target_output."href='https://doi.org/".$item->data->DOI."'>".$item->data->DOI."</a>"
+   								"doi: <a class='zp-doi-link' ".$zp_target_output."href='https://doi.org/".$item->data->DOI."'>".$item->data->DOI."</a>",
    								$item->bib
    							);
 					}
