@@ -160,7 +160,8 @@ jQuery(document).ready(function()
 					&& zp_items.data.length > 0 )
 			{
 				// var tempItems = "";
-				if ( params.zpShowNotes == true ) var tempNotes = "";
+				if ( params.zpShowNotes == true ) // Changed in 7.3.7
+					var tempNotes = "";
 				var $postRef = jQuery($instance).parent();
 
 
@@ -185,7 +186,7 @@ jQuery(document).ready(function()
 				zp_format_intext_citations( $instance, params.zpItemkey, zp_items.data, params, update );
 
 				// Format in-text bibliography
-				zp_format_intextbib ( $instance, zp_items, params.zpItemkey, params, update );
+				tempNotes = zp_format_intextbib ( $instance, zp_items, params.zpItemkey, params, update );
 
 				// Add cached OR initial request items (first 50) to list
 				if ( update === false )
@@ -265,6 +266,34 @@ jQuery(document).ready(function()
 								}).detach().appendTo("#"+zp_items.instance+" .zp-List");
 							}
 
+							// If re-sorting and numbered ...
+							// TODO: Make a function rather than duplicate code
+							else if ( ['author', 'date'].indexOf(sortby) == -1
+									&& jQuery("#"+zp_items.instance+" .zp-List .csl-left-margin").length != 0 )
+							{
+								console.log('zp: re-sorting numbered citations in bibliography');
+
+								jQuery("#"+zp_items.instance+" .zp-List div.zp-Entry").sort( function(a,b)
+								{
+									var an = parseInt( jQuery('.csl-left-margin', a).text() ),
+										bn = parseInt( jQuery('.csl-left-margin', b).text() );
+
+									if (an > bn)
+										if ( orderby == "asc" )
+											return 1;
+										else
+											return -1;
+									else if (an < bn)
+										if ( orderby == "asc" )
+											return -1;
+										else
+											return 1;
+									else
+										return 0;
+	
+								}).detach().appendTo("#"+zp_items.instance+" .zp-List");
+							}
+
 							console.log("zp: done");
 							console.log("---");
 						}
@@ -303,6 +332,7 @@ jQuery(document).ready(function()
 		// {KEY}
 		// {KEY,3-9}
 		// KEY,{KEY,8}
+		// KEY, (3, 42)
 
 		var intext_citations = [];
 
@@ -355,7 +385,7 @@ jQuery(document).ready(function()
 			// REVIEW: New way based on new format
 			// Expects: {api:key}, with pages in intext_citation_params
 
-			// Divide up multiple items (if exist): always produc an array
+			// Divide up multiple items (if exist): always produce an array
 			intext_citation_split = intext_citation.split( "},{" );
 
 			// Prepare it as an array
@@ -367,14 +397,17 @@ jQuery(document).ready(function()
 
 				// Deal with pages
 				item_pages = false;
+
 				if ( intext_citation_params.pages != "np" )
 				{
-					item_pages = intext_citation_params.pages.split( "--" );
+					// TEST: If multiple, non-contiguous, then we expect ++
+					item_pages = intext_citation_params.pages.replaceAll('++', ', ');
 
-					if ( item_pages[id] == "np" )
-						item_pages[id] = false;
+					// Split the string of all page references in this in-text instance
+					item_pages = item_pages.split( "--" )[id];
 
-					item_pages = item_pages[id];
+					if ( item_pages == "np" )
+						item_pages = false;
 				}
 
 				intext_citation[id] =
@@ -696,6 +729,7 @@ jQuery(document).ready(function()
 
 	function zp_format_intextbib ( $instance, zp_items, zp_itemkeys, params, update )
 	{
+		var tempNotes = "";
     	// var tempItemsArr = {}; // Format: ["itemkey", "data"]
 		var tempHasNum = false;
 		var zpPostID = jQuery(".ZP_POSTID", $instance).text();
@@ -709,6 +743,7 @@ jQuery(document).ready(function()
 		jQuery.each( zp_items.data, function( index, item )
 		{
 			var tempItem = "";
+			// var tempNotes = "";
 
 			// Determine item reference
 			// e.g., zp-ID-406-1573921-VPACLPQ8
@@ -750,6 +785,7 @@ jQuery(document).ready(function()
 
 			// Disambiguation originally by Chris Wentzloff
 			// REVIEW: Wasn't working right; KS refurbished
+			// TODO: Starts with b, then goes to a, then c ..?
 			var authDateStr = tempAuthor+'-'+tempItemDate;
 			var authDateStrDisAlpha = '';
 			var authDateInstances = 1;
@@ -862,7 +898,6 @@ jQuery(document).ready(function()
 
 				// Find all instances of the in-text citation, and update the year
 				// jQuery('a[href="#zp-ID-'+jQuery(".ZP_POSTID", $instance).text()+'-'+item.library.id+'-'+item.key+'"]').each(function(){
-				// console.log( window.zpIntextCitations["post-"+jQuery(".ZP_POSTID", $instance).text()][item.key].class );
 				jQuery('.'+window.zpIntextCitations["post-"+jQuery(".ZP_POSTID", $instance).text()][item.key].class).each( function()
 				{
 					// // Handle grouped in-text citations (a) that might be together
@@ -976,7 +1011,9 @@ jQuery(document).ready(function()
 			// Add notes, if any
 			if ( params.zpShowNotes == true
 					&& item.hasOwnProperty('notes') )
+			{
 				tempNotes += item.notes;
+			}
 
 			// Add this item to the list; replace or skip duplicates
 			if ( $item_ref.length > 0
@@ -1030,6 +1067,8 @@ jQuery(document).ready(function()
 			// REVIEW: Not necessary?
 			// console.log("IT: not hasnum or updating");
 		}
+
+		return tempNotes;
 
 	} // function zp_format_intextbib
 

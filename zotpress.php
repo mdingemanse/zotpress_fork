@@ -6,7 +6,7 @@
     Plugin URI: http://katieseaborn.com/plugins
     Description: Bringing Zotero and scholarly blogging to your WordPress website.
     Author: Katie Seaborn
-    Version: 7.3.6
+    Version: 7.3.10
     Author URI: http://katieseaborn.com
     Text Domain: zotpress
     Domain Path: /languages/
@@ -15,7 +15,7 @@
 
 /*
 
-    Copyright 2023 Katie Seaborn
+    Copyright 2024 Katie Seaborn
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,9 +47,23 @@ For requests:
 To-do:
 * Zotero-API-Key` rather than `key=`.
 * qmode=titleCreatorYear&q=2000,2001 -> v3 doesn't work
+* multiple itemtype
 
 */
 // DESIGN ---------------------------------------------------------------------------------------
+
+
+
+// DIRECT ACESS ---------------------------------------------------------------------------------
+
+// Thanks to Jörg Mechnich (jmechnich@github)
+
+if ( ! defined( 'ABSPATH' ) ) {
+
+    exit; // Don't access directly.
+};
+
+// DIRECT ACESS ---------------------------------------------------------------------------------
 
 
 
@@ -58,13 +72,16 @@ To-do:
     define('ZOTPRESS_PLUGIN_FILE',  __FILE__ );
     define('ZOTPRESS_PLUGIN_URL', plugin_dir_url( ZOTPRESS_PLUGIN_FILE ));
     define('ZOTPRESS_PLUGIN_DIR', dirname( __FILE__ ));
-    define('ZOTPRESS_VERSION', '7.3.6' );
-    define('ZOTPRESS_LIVEMODE', true ); // NOTE: Remember to set to TRUE
+    define('ZOTPRESS_VERSION', '7.3.10' );
+
+    // NOTE: Remember to set to TRUE after dev and before version release
+    define('ZOTPRESS_LIVEMODE', true );
 
     $GLOBALS['zp_is_shortcode_displayed'] = false;
     $GLOBALS['zp_shortcode_instances'] = array();
 
-    $GLOBALS['Zotpress_update_db_by_version'] = '7.1.4'; // NOTE: Only change if the db needs updating - 5.2.6
+    // 5.2.6: NOTE: Only change if the db needs updating 
+    $GLOBALS['Zotpress_update_db_by_version'] = '7.1.4';
 
 // GLOBAL VARS ----------------------------------------------------------------------------------
 
@@ -282,8 +299,10 @@ To-do:
 
     /**
     * Change HTTP request timeout
+    * Changed in 7.3.7
     */
-    function Zotpress_change_timeout($time): int { return 60; /* second */ }
+    // function Zotpress_change_timeout($time): int { return 60; /* second */ }
+    function Zotpress_change_timeout($time) { return 60; /* second */ }
     add_filter('http_request_timeout', 'Zotpress_change_timeout');
 
 

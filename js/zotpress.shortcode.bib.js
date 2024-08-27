@@ -177,7 +177,6 @@ jQuery(document).ready(function()
 		if ( typeof(request_last) === "undefined" || request_last == "false" || request_last == "" )
 			request_last = 0;
 
-
 		jQuery.ajax(
 		{
 			url: zpShortcodeAJAX.ajaxurl,
@@ -193,7 +192,10 @@ jQuery(document).ready(function()
 				'collection_id': params.zpCollectionId,
 				'tag_id': params.zpTagId,
 
-				'author': encodeURI(params.zpAuthor).replace("'","%27"),
+				// 'author': encodeURI(params.zpAuthor).replace("'","%27"),
+				// 'author': params.zpAuthor.toString().replace("\\","%5C"),
+				'author': params.zpAuthor,
+				// 'author': params.zpAuthor.toString().replace("'","&#39;"),
 				'year': params.zpYear,
 				'style': params.zpStyle,
 				'limit': params.zpLimit,
@@ -233,7 +235,9 @@ jQuery(document).ready(function()
 
 				// Account for Zotero errors
 				// QUESTION: Did something change? Now have to ref [0]
-				if ( zp_items.status == 'empty'
+				// 7.3.10: CHECK: Added 'error' status check
+				if ( zp_items.status == 'error'
+						|| zp_items.status == 'empty'
 			 			|| zp_items.data == 'Not found' )
 				{
 					var zp_msg = zpShortcodeAJAX.txt_zperror + " ";
@@ -247,7 +251,7 @@ jQuery(document).ready(function()
 						zp_msg += zp_items.data;
 					}
 
-					console.log( "Zotpress: " + zp_msg );
+					console.log( "zp: Zotpress message: " + zp_msg );
 
 					// Hide errors if something shown
 					var hideErrMsg = '';
@@ -465,6 +469,9 @@ jQuery(document).ready(function()
 						}
 						else // Otherwise, finish up the initial request(s):
 						{
+							// Re-sort, if needed
+							// zp_bib_reformat( $instance, zp_items, params );
+
 							// Remove loading
 							jQuery("#"+zp_items.instance+" .zp-List").removeClass("loading");
 
@@ -524,7 +531,7 @@ jQuery(document).ready(function()
 			},
 			error: function(errorThrown)
 			{
-                console.log("Zotpress via WP AJAX Error: ", errorThrown);
+                console.log("zp: Zotpress via WP AJAX Error: ", errorThrown);
 			}
 		});
 
@@ -533,7 +540,7 @@ jQuery(document).ready(function()
 
 	function zp_bib_reformat( $instance, zp_items, zp_params )
 	{
-		console.log('zp: reformatting');
+		console.log('zp: reformatting instance', zp_items.instance);
 
 		var sortby = jQuery(".ZP_SORTBY", $instance).text();
 		var orderby = jQuery(".ZP_ORDER", $instance).text();
@@ -700,7 +707,7 @@ jQuery(document).ready(function()
 	// Used by zp_bib_reformat()
 	function typicalSort( zp_items, sortby, sortOrder, orderby )
 	{
-		console.log('zp: running typical sort');
+		console.log('zp: running typical sort for instance ', zp_items.instance);
 
 		// Re-sort if not numbered and sorting by author or date
 		if ( ['author', 'date'].indexOf(sortby) !== -1

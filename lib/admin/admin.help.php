@@ -306,7 +306,7 @@
                         <div class="zp-Zotero-API-Attribute" data-keywords="item,item key,item id,reference,citation,source,page">
                             <h4>Data > <strong>items</strong></h4>
                             <div class="description"><p>Alternative: <code>item</code> Item keys and page number pairs formatted like so: <code>item_key</code> or <code>{item_key,pages}</code> or <code>{item_key1,pages},{item_key2,pages},...</code>.</p></div>
-                            <div class="example"><p><code>[zotpressInText item="NCXAA92F"]</code></p><p><code>[zotpressInText item="{NCXAA92F,10-15}"]</code></p><p><code>[zotpressInText items="{NCXAA92F,10-15},{55MKF89B,1578},{3ITTIXHP}"]</code></p></div>
+                            <div class="example"><p><code>[zotpressInText item="NCXAA92F"]</code></p><p><code>[zotpressInText item="{NCXAA92F,10-15}"]</code></p><p><code>[zotpressInText items="{NCXAA92F,10-15},{55MKF89B,1578},{3ITTIXHP}"]</code></p><p>Parentheses indicate multiple, non-contiguous references to pages in the same source.</p><p><code>[zotpressInText items="{3ITTIXHP,(3,5)}"]</code></p></div>
                             <div class="description"><p>Can also include items from multiple Zotero accounts using this format: <code>{api_user_id:item_key}</code></p></div>
                             <div class="example"><p><code>[zotpressInText item="{000001:NCXAA92F},{200000:DTA2KZXU}"]</code></p></div>
                         </div>
